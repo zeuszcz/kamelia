@@ -51,6 +51,9 @@ JWT_SECRET = os.environ.get("KAMELIA_SECRET", "kamelia-dev-secret-change-me-in-p
 JWT_ALG = "HS256"
 JWT_TTL_HOURS = 24 * 14  # 2 weeks
 COOKIE_NAME = "kamelia_session"
+# Set KAMELIA_SECURE_COOKIE=1 in production (HTTPS) so the session cookie
+# is not sent over plain HTTP. In local dev (http://localhost) keep it off.
+COOKIE_SECURE = os.environ.get("KAMELIA_SECURE_COOKIE", "0") == "1"
 
 # ─────────────────────────────────────────────────────────────────────
 # DATABASE
@@ -330,7 +333,7 @@ def register(payload: RegisterIn, response: Response, db: Session = Depends(get_
     response.set_cookie(
         key=COOKIE_NAME, value=token,
         max_age=JWT_TTL_HOURS * 3600,
-        httponly=True, samesite="lax", secure=False,  # dev: http
+        httponly=True, samesite="lax", secure=COOKIE_SECURE,
         path="/",
     )
     return user
@@ -345,7 +348,7 @@ def login(payload: LoginIn, response: Response, db: Session = Depends(get_db)):
     response.set_cookie(
         key=COOKIE_NAME, value=token,
         max_age=JWT_TTL_HOURS * 3600,
-        httponly=True, samesite="lax", secure=False,
+        httponly=True, samesite="lax", secure=COOKIE_SECURE,
         path="/",
     )
     return user
