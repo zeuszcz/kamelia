@@ -1,0 +1,35 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name kamelia.innertalk.space;
+
+    # Will be replaced by certbot --nginx with HTTPS redirect
+
+    location / {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+        proxy_connect_timeout 10s;
+    }
+
+    # Long cache for assets
+    location ~* ^/kamelia/assets/.+\.(css|js|woff2?|svg|png|jpg|jpeg|webp)$ {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_set_header Host $host;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800";
+    }
+
+    # Disallow direct DB access (extra safety)
+    location ~ /\.db$ { return 404; }
+    location ~ /\.git { return 404; }
+
+    client_max_body_size 4M;
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Вход — Камелия·Мед</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+</head>
+<body data-page="cabinet">
+
+<a href="/kamelia/" class="auth-back">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;"><path d="M13 8H3M7 4L3 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  На сайт
+</a>
+
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="label">Вход в кабинет</div>
+      <h1>С&nbsp;возвращением<em>.</em></h1>
+      <div class="auth-sub">Введите email и&nbsp;пароль, которые указали при&nbsp;регистрации.</div>
+    </div>
+
+    <div class="auth-body">
+      <div class="auth-error" id="authError"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input type="email" id="fEmail" required placeholder="ivanov@mail.ru" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="fPassword">Пароль</label>
+          <input type="password" id="fPassword" required placeholder="••••••" autocomplete="current-password" minlength="6">
+        </div>
+
+        <button type="submit" class="btn btn--brand btn--lg" style="width: 100%; justify-content: center; margin-top: 12px;">
+          <span>Войти в кабинет</span>
+          <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-foot">
+      Ещё не&nbsp;регистрировались? <a href="/kamelia/cabinet/register.html">Создать кабинет</a>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--ink-3);">
+    Кабинет — для&nbsp;записи на&nbsp;приём и&nbsp;истории визитов.
+  </div>
+</main>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script>
+const { api, requireGuest } = window.KAMELIA_CABINET;
+
+requireGuest();
+
+const form = document.getElementById('loginForm');
+const errBox = document.getElementById('authError');
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  errBox.classList.remove('show');
+  const email = document.getElementById('fEmail').value.trim();
+  const password = document.getElementById('fPassword').value;
+
+  try {
+    await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    location.href = '/kamelia/cabinet/';
+  } catch (err) {
+    errBox.textContent = err.message || 'Не удалось войти';
+    errBox.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

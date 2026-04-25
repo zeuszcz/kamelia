@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Регистрация — Камелия·Мед</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+</head>
+<body data-page="cabinet">
+
+<a href="/kamelia/" class="auth-back">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;"><path d="M13 8H3M7 4L3 8l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  На сайт
+</a>
+
+<main class="auth-page" style="max-width: 520px;">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="label">Создать кабинет</div>
+      <h1>Откроем&nbsp;<em>карту пациента</em></h1>
+      <div class="auth-sub">Электронная история визитов, онлайн-запись и&nbsp;напоминания об&nbsp;осмотрах.</div>
+    </div>
+
+    <div class="auth-body">
+      <div class="auth-error" id="authError"></div>
+
+      <form id="regForm" novalidate>
+        <div class="field-rule">Контактные данные</div>
+        <div class="form-row">
+          <div class="field">
+            <label for="fName">Имя и фамилия</label>
+            <input type="text" id="fName" required placeholder="Иван Иванов" autocomplete="name" minlength="2">
+          </div>
+          <div class="field">
+            <label for="fPhone">Телефон</label>
+            <input type="tel" id="fPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+          </div>
+        </div>
+
+        <div class="field-rule">Данные для входа</div>
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input type="email" id="fEmail" required placeholder="ivanov@mail.ru" autocomplete="email">
+          <div class="field-hint" id="emailHint" style="display: none;">Например: ivanov@mail.ru</div>
+        </div>
+
+        <div class="field field-password">
+          <label for="fPassword">Пароль · от 6 символов</label>
+          <input type="password" id="fPassword" required minlength="6" placeholder="••••••" autocomplete="new-password">
+          <button type="button" class="pwd-toggle" data-target="fPassword">Показать</button>
+          <div class="pwd-strength" id="pwdStrength" style="display: none;">
+            <div class="pwd-strength-bar"><div class="pwd-strength-fill"></div></div>
+            <div class="pwd-strength-label" id="pwdStrengthLabel">слабый</div>
+          </div>
+        </div>
+
+        <div class="field field-password">
+          <label for="fPassword2">Повторите пароль</label>
+          <input type="password" id="fPassword2" required minlength="6" placeholder="••••••" autocomplete="new-password">
+          <button type="button" class="pwd-toggle" data-target="fPassword2">Показать</button>
+          <div class="field-hint" id="pwd2Hint" style="display: none; color: var(--accent);">Пароли не совпадают</div>
+        </div>
+
+        <div class="consents">
+          <label class="consent">
+            <input type="checkbox" id="fConsentData" checked required>
+            <span>
+              Согласен с&nbsp;<a href="/kamelia/legal/privacy.html" data-modal data-modal-title="Политика обработки персональных данных">политикой обработки персональных данных</a> и&nbsp;<a href="/kamelia/legal/terms.html" data-modal data-modal-title="Условия обслуживания">условиями обслуживания</a>.
+              <span class="consent-required">· обязательно</span>
+            </span>
+          </label>
+          <label class="consent">
+            <input type="checkbox" id="fConsentNotify" checked>
+            <span>Хочу получать напоминания о&nbsp;визитах и&nbsp;плановых осмотрах. <span style="color: var(--ink-3); font-size: 11px;">· можно отключить в&nbsp;кабинете</span></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn--brand btn--lg" id="submitBtn" style="width: 100%; justify-content: center;">
+          <span id="submitLabel">Создать кабинет</span>
+          <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <div class="auth-foot">
+      Уже регистрировались? <a href="/kamelia/cabinet/login.html">Войти</a>
+    </div>
+  </div>
+</main>
+
+<script src="/kamelia/assets/site.js"></script>
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script>
+const { api, requireGuest } = window.KAMELIA_CABINET;
+requireGuest();
+
+// ─── Phone mask ───
+const phone = document.getElementById('fPhone');
+phone.addEventListener('input', () => {
+  let v = phone.value.replace(/\D/g, '');
+  if (v.startsWith('8')) v = '7' + v.slice(1);
+  if (v && !v.startsWith('7')) v = '7' + v;
+  v = v.slice(0, 11);
+  let out = '+7';
+  if (v.length > 1) out += ' (' + v.slice(1, 4);
+  if (v.length >= 4) out += ') ' + v.slice(4, 7);
+  if (v.length >= 7) out += '-' + v.slice(7, 9);
+  if (v.length >= 9) out += '-' + v.slice(9, 11);
+  phone.value = out;
+});
+
+// ─── Password toggle ───
+document.querySelectorAll('.pwd-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    const isPwd = target.type === 'password';
+    target.type = isPwd ? 'text' : 'password';
+    btn.textContent = isPwd ? 'Скрыть' : 'Показать';
+  });
+});
+
+// ─── Password strength ───
+const pwdInput = document.getElementById('fPassword');
+const strengthEl = document.getElementById('pwdStrength');
+const strengthLabelEl = document.getElementById('pwdStrengthLabel');
+function calcStrength(p) {
+  let score = 0;
+  if (p.length >= 6) score++;
+  if (p.length >= 10) score++;
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
+  if (/\d/.test(p) && /[^A-Za-z0-9]/.test(p)) score++;
+  return score;
+}
+const STRENGTH_LBL = ['слишком короткий', 'слабый', 'средний', 'хороший', 'отличный'];
+pwdInput.addEventListener('input', () => {
+  const v = pwdInput.value;
+  if (!v) { strengthEl.style.display = 'none'; return; }
+  strengthEl.style.display = 'flex';
+  const score = calcStrength(v);
+  strengthEl.classList.remove('lvl-1','lvl-2','lvl-3','lvl-4');
+  if (score > 0) strengthEl.classList.add('lvl-' + Math.min(score, 4));
+  strengthLabelEl.textContent = STRENGTH_LBL[score] || STRENGTH_LBL[0];
+});
+
+// ─── Password match ───
+const pwd2 = document.getElementById('fPassword2');
+const pwd2Hint = document.getElementById('pwd2Hint');
+function checkMatch() {
+  if (!pwd2.value) {
+    pwd2Hint.style.display = 'none';
+    pwd2.classList.remove('invalid');
+    return true;
+  }
+  const match = pwd2.value === pwdInput.value;
+  pwd2Hint.style.display = match ? 'none' : 'block';
+  pwd2.classList.toggle('invalid', !match);
+  return match;
+}
+pwd2.addEventListener('input', checkMatch);
+pwdInput.addEventListener('input', checkMatch);
+
+// ─── Email validation hint ───
+const email = document.getElementById('fEmail');
+const emailHint = document.getElementById('emailHint');
+email.addEventListener('blur', () => {
+  if (!email.value) { emailHint.style.display = 'none'; return; }
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+  if (!ok) {
+    emailHint.style.display = 'block';
+    emailHint.style.color = 'var(--accent)';
+    emailHint.textContent = 'Похоже, в адресе ошибка';
+    email.classList.add('invalid');
+  } else {
+    emailHint.style.display = 'none';
+    email.classList.remove('invalid');
+  }
+});
+email.addEventListener('input', () => {
+  email.classList.remove('invalid');
+  emailHint.style.display = 'none';
+});
+
+// ─── Submit ───
+const form = document.getElementById('regForm');
+const errBox = document.getElementById('authError');
+const submitBtn = document.getElementById('submitBtn');
+const submitLabel = document.getElementById('submitLabel');
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  errBox.classList.remove('show');
+
+  const name = document.getElementById('fName').value.trim();
+  const emailVal = email.value.trim();
+  const password = pwdInput.value;
+  const phoneVal = phone.value.trim() || null;
+  const consent = document.getElementById('fConsentData').checked;
+  const notifyConsent = document.getElementById('fConsentNotify').checked;
+
+  // Validation
+  if (name.length < 2) {
+    errBox.textContent = 'Укажите имя и фамилию';
+    errBox.classList.add('show');
+    document.getElementById('fName').focus();
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+    errBox.textContent = 'Некорректный email';
+    errBox.classList.add('show');
+    email.focus();
+    return;
+  }
+  if (password.length < 6) {
+    errBox.textContent = 'Пароль должен быть от 6 символов';
+    errBox.classList.add('show');
+    pwdInput.focus();
+    return;
+  }
+  if (!checkMatch()) {
+    errBox.textContent = 'Пароли не совпадают';
+    errBox.classList.add('show');
+    pwd2.focus();
+    return;
+  }
+  if (!consent) {
+    errBox.textContent = 'Нужно согласие с политикой обработки данных';
+    errBox.classList.add('show');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitLabel.textContent = 'Создаём…';
+
+  try {
+    await api('/api/auth/register', {
+      method: 'POST',
+      body: { name, email: emailVal, password, phone: phoneVal },
+    });
+    // success — redirect to cabinet
+    location.href = '/kamelia/cabinet/';
+  } catch (err) {
+    errBox.textContent = err.message || 'Не удалось создать кабинет';
+    errBox.classList.add('show');
+    submitBtn.disabled = false;
+    submitLabel.textContent = 'Создать кабинет';
+  }
+});
+</script>
+</body>
+</html>

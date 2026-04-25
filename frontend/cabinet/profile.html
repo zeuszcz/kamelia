@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Личные данные — Камелия·Мед</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="cab-shell">
+  <div id="cab-side"></div>
+
+  <div class="cab-content">
+
+    <section class="cab-greeting">
+      <div class="hello">— Анкета пациента</div>
+      <h1>Личные&nbsp;<em>данные</em></h1>
+      <p>Эти данные используются только для&nbsp;связи и&nbsp;ведения медицинской карты. Не&nbsp;передаются третьим лицам.</p>
+    </section>
+
+    <div class="cab-card">
+      <div class="cab-card-head">
+        <h2>Карта&nbsp;<em>пациента</em> · № <span id="patNum" style="font-family:'Onest',sans-serif;font-style:normal;color:var(--ink);">—</span></h2>
+        <span style="font-size: 12px; color: var(--ink-3);" id="memberSince">—</span>
+      </div>
+
+      <div class="auth-success" id="profSuccess">Данные сохранены ✓</div>
+      <div class="auth-error" id="profError"></div>
+
+      <form id="profileForm" novalidate>
+        <div class="field-rule">Контактные данные</div>
+        <div class="form-row">
+          <div class="field">
+            <label for="fName">Имя и фамилия</label>
+            <input type="text" id="fName" required>
+          </div>
+          <div class="field">
+            <label for="fPhone">Телефон</label>
+            <input type="tel" id="fPhone" placeholder="+7 (___) ___-__-__">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="fEmail">Email</label>
+            <input type="email" id="fEmail" disabled>
+          </div>
+          <div class="field">
+            <label>Дата рождения</label>
+            <div class="kdate" data-placeholder="— укажите дату —" data-allow-past="1" data-months-ahead="0">
+              <input type="date" id="fBirth">
+            </div>
+          </div>
+        </div>
+
+        <div class="field-rule">Медицинская информация</div>
+        <div class="field">
+          <label>Аллергии и противопоказания</label>
+          <input type="text" disabled placeholder="Заполнится после первого визита">
+        </div>
+        <div class="field">
+          <label>Лечащий врач</label>
+          <input type="text" disabled placeholder="Назначается на первой консультации">
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px; align-items: center; flex-wrap: wrap;">
+          <button type="submit" class="btn btn--brand">
+            <span>Сохранить</span>
+          </button>
+          <a href="/kamelia/cabinet/" class="btn btn--ghost">
+            <span>Отмена</span>
+          </a>
+          <a href="#" id="logoutLink" style="margin-left: auto; font-size: 13px; color: var(--accent); display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:13px;height:13px;"><path d="M10 12l4-4-4-4M14 8H6M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Выйти из кабинета
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <div class="cab-card" style="background: var(--surface-3);">
+      <div class="cab-card-head" style="padding-bottom: 14px; margin-bottom: 18px;">
+        <h2 style="font-size: 22px;">Безопасность и&nbsp;<em>конфиденциальность</em></h2>
+      </div>
+      <div style="font-size: 14px; color: var(--ink-3); line-height: 1.65;">
+        <p style="margin-bottom: 8px;">· Пароль хранится в&nbsp;зашифрованном виде (bcrypt, 12&nbsp;раундов). Сменить пароль можно по&nbsp;запросу администратору.</p>
+        <p style="margin-bottom: 8px;">· Сессия действительна 14&nbsp;дней. После — потребуется повторный вход.</p>
+        <p style="margin-bottom: 8px;">· Все запросы между сайтом и&nbsp;сервером защищены по&nbsp;стандарту HTTPS (в&nbsp;production).</p>
+        <p>· Удалить кабинет можно по&nbsp;звонку на&nbsp;<a href="tel:+78432100909" style="color: var(--brand); border-bottom: 1px solid currentColor;">210·09·09</a> или&nbsp;письмом.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/kamelia/assets/site.js"></script>
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script>
+const { api, initCabinetPage, logout, fmtDate } = window.KAMELIA_CABINET;
+
+(async () => {
+  const user = await initCabinetPage('profile');
+  if (!user) return;
+
+  document.getElementById('patNum').textContent = String(user.id).padStart(4, '0');
+  document.getElementById('memberSince').textContent = `пациент с ${fmtDate(user.created_at)}`;
+  document.getElementById('fName').value = user.name || '';
+  document.getElementById('fPhone').value = user.phone || '';
+  document.getElementById('fEmail').value = user.email || '';
+  document.getElementById('fBirth').value = user.birth_date || '';
+
+  const phone = document.getElementById('fPhone');
+  phone.addEventListener('input', () => {
+    let v = phone.value.replace(/\D/g, '');
+    if (v.startsWith('8')) v = '7' + v.slice(1);
+    if (v && !v.startsWith('7')) v = '7' + v;
+    v = v.slice(0, 11);
+    let out = '+7';
+    if (v.length > 1) out += ' (' + v.slice(1, 4);
+    if (v.length >= 4) out += ') ' + v.slice(4, 7);
+    if (v.length >= 7) out += '-' + v.slice(7, 9);
+    if (v.length >= 9) out += '-' + v.slice(9, 11);
+    phone.value = out;
+  });
+
+  document.getElementById('logoutLink').addEventListener('click', e => { e.preventDefault(); logout(); });
+
+  const form = document.getElementById('profileForm');
+  const okBox = document.getElementById('profSuccess');
+  const errBox = document.getElementById('profError');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    okBox.classList.remove('show'); errBox.classList.remove('show');
+    try {
+      await api('/api/auth/me', {
+        method: 'PATCH',
+        body: {
+          name: document.getElementById('fName').value.trim(),
+          phone: phone.value.trim() || null,
+          birth_date: document.getElementById('fBirth').value || null,
+        },
+      });
+      okBox.classList.add('show');
+      setTimeout(() => okBox.classList.remove('show'), 3000);
+    } catch (err) {
+      errBox.textContent = err.message;
+      errBox.classList.add('show');
+    }
+  });
+})();
+</script>
+</body>
+</html>

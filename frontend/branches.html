@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Филиалы — Камелия·Мед</title>
+<meta name="description" content="Пять адресов сети «Камелия-Мед» в Казани.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+</head>
+<body data-page="branches">
+
+<div id="chrome-head"></div>
+
+<main>
+  <div class="container">
+    <div class="crumb">
+      <a href="/kamelia/">Главная</a><span class="sep">/</span><span>Филиалы</span>
+    </div>
+
+    <section class="page-title r in">
+      <div class="label">Адреса</div>
+      <h1>Пять филиалов<br>в&nbsp;<span class="em-italic">Казани</span></h1>
+      <p class="lede">Расписание единое, электронная карта пациента общая. Можно начать лечение в&nbsp;одном филиале и&nbsp;продолжить в&nbsp;другом — вся история встретит вас в&nbsp;любом кабинете.</p>
+    </section>
+
+    <div class="grid grid-1-2 mb-6" style="gap: 32px;">
+      <div class="r d2">
+        <div class="branch-map">
+          <svg class="map-svg" viewBox="0 0 600 750" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="dotsBg" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="1" cy="1" r=".7" fill="#A09A8E" opacity=".3"/>
+              </pattern>
+            </defs>
+            <rect width="600" height="750" fill="url(#dotsBg)"/>
+
+            <!-- Kazanka -->
+            <path class="map-river" d="M0 280 Q150 250 220 320 T 380 360 Q480 400 600 360"/>
+            <text x="280" y="318" font-family="Onest" font-style="italic" font-size="13" fill="#A09A8E">— река Казанка</text>
+            <!-- Volga -->
+            <path class="map-river" d="M120 750 Q100 600 50 500 T 20 350"/>
+            <text x="40" y="650" font-family="Onest" font-style="italic" font-size="13" fill="#A09A8E">— Волга</text>
+
+            <!-- District guides -->
+            <path class="map-district" d="M260 100 L500 90 L520 240 L380 320 L260 280 Z"/>
+            <path class="map-district" d="M260 380 L520 400 L540 600 L300 620 Z"/>
+            <path class="map-district" d="M150 380 L260 380 L300 620 L100 640 Z"/>
+
+            <!-- District labels -->
+            <text class="map-district-lbl" x="380" y="180">НОВО-САВИНОВСКИЙ</text>
+            <text class="map-district-lbl" x="120" y="510">КИРОВСКИЙ</text>
+            <text class="map-district-lbl" x="350" y="510">СОВЕТСКИЙ</text>
+            <text class="map-district-lbl" x="380" y="660">ПРИВОЛЖСКИЙ</text>
+
+            <!-- Kremlin -->
+            <text x="180" y="260" font-family="Onest" font-size="13" fill="#0A0A0A" font-weight="500">Казанский Кремль</text>
+            <circle cx="220" cy="240" r="3" fill="#0A0A0A"/>
+
+            <!-- Pins -->
+            <g class="map-pin active" data-id="0" transform="translate(380 200)">
+              <circle class="ring" r="20"/>
+              <circle class="dot" r="5"/>
+              <text class="lbl" x="14" y="4">1 · Чистопольская</text>
+            </g>
+            <g class="map-pin" data-id="1" transform="translate(432 264)">
+              <circle class="ring" r="16"/>
+              <circle class="dot" r="4"/>
+              <text class="lbl" x="14" y="4">2 · С. Хакима</text>
+            </g>
+            <g class="map-pin" data-id="2" transform="translate(178 340)">
+              <circle class="ring" r="16"/>
+              <circle class="dot" r="4"/>
+              <text class="lbl" x="-100" y="4">3 · Ташаяк</text>
+            </g>
+            <g class="map-pin" data-id="3" transform="translate(460 540)">
+              <circle class="ring" r="16"/>
+              <circle class="dot" r="4"/>
+              <text class="lbl" x="14" y="4">4 · пр. Победы</text>
+            </g>
+            <g class="map-pin" data-id="4" transform="translate(286 470)">
+              <circle class="ring" r="16"/>
+              <circle class="dot" r="4"/>
+              <text class="lbl" x="14" y="4">5 · Кул&#160;Гали</text>
+            </g>
+          </svg>
+          <div class="map-legend">
+            <div class="map-legend-info">
+              <div class="l">Выбран филиал</div>
+              <div class="v" id="mapBranchAddr">ул. Чистопольская, 77/2</div>
+            </div>
+            <a href="/kamelia/booking.html" class="btn btn--brand btn--xs"><span>Записаться</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="r d1">
+        <div class="branch-list" id="branchList">
+          <div class="branch-row active" data-id="0" id="b0">
+            <div class="branch-mark">1</div>
+            <div class="branch-info">
+              <div class="branch-tag">Главный · с 2010</div>
+              <div class="branch-addr">ул. Чистопольская, 77/2</div>
+              <div class="branch-meta">
+                <span>Ново-Савиновский</span>
+                <span>9:00 — 21:00</span>
+                <span>2 этаж</span>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.5;">Флагманский кабинет: КТ-аппарат, микроскопическая стоматология, отдельная зона детской седации.</div>
+            </div>
+            <a href="tel:+78432100909" class="branch-cta">Позвонить <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="branch-row" data-id="1" id="b1">
+            <div class="branch-mark">2</div>
+            <div class="branch-info">
+              <div class="branch-tag">Северный · с 2014</div>
+              <div class="branch-addr">ул. Сибгата Хакима, 51</div>
+              <div class="branch-meta">
+                <span>Ново-Савиновский</span>
+                <span>9:00 — 21:00</span>
+                <span>1 этаж</span>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.5;">Семейный филиал — два детских кабинета, игровая зона, отдельный вход с&nbsp;коляской.</div>
+            </div>
+            <a href="tel:+78432100909" class="branch-cta">Позвонить <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="branch-row" data-id="2" id="b2">
+            <div class="branch-mark">3</div>
+            <div class="branch-info">
+              <div class="branch-tag">Заречный · с 2016</div>
+              <div class="branch-addr">ул. Ташаяк, 2а</div>
+              <div class="branch-meta">
+                <span>Кировский</span>
+                <span>8:30 — 21:00</span>
+                <span>отд. здание</span>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.5;">Утренние смены с&nbsp;8:30 для&nbsp;тех, кто&nbsp;успевает до&nbsp;работы. Парковка на&nbsp;5&nbsp;мест.</div>
+            </div>
+            <a href="tel:+78432100909" class="branch-cta">Позвонить <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="branch-row" data-id="3" id="b3">
+            <div class="branch-mark">4</div>
+            <div class="branch-info">
+              <div class="branch-tag">Южный · с 2019</div>
+              <div class="branch-addr">пр. Победы, 78</div>
+              <div class="branch-meta">
+                <span>Приволжский</span>
+                <span>9:00 — 20:00</span>
+                <span>1 этаж</span>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.5;">Близко к&nbsp;центру — 5&nbsp;минут до&nbsp;м.&nbsp;Горки. Специализация: ортодонтия и&nbsp;элайнеры.</div>
+            </div>
+            <a href="tel:+78432100909" class="branch-cta">Позвонить <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="branch-row" data-id="4" id="b4">
+            <div class="branch-mark">5</div>
+            <div class="branch-info">
+              <div class="branch-tag">Восточный · с 2021</div>
+              <div class="branch-addr">ул. Кул&nbsp;Гали, 27</div>
+              <div class="branch-meta">
+                <span>Советский</span>
+                <span>9:00 — 21:00</span>
+                <span>1 этаж</span>
+              </div>
+              <div style="font-size: 13px; color: var(--ink-3); margin-top: 10px; line-height: 1.5;">Самый молодой филиал, новейшее оборудование. Цифровое сканирование и&nbsp;печать кап на&nbsp;месте.</div>
+            </div>
+            <a href="tel:+78432100909" class="branch-cta">Позвонить <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 24px 0;">
+      <p style="color: var(--ink-3); margin-bottom: 16px; font-size: 14px;">Все филиалы работают по&nbsp;единому стандарту качества</p>
+      <a href="/kamelia/booking.html" class="btn btn--brand">
+        <span>Записаться в любой филиал</span>
+        <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</main>
+
+<div id="chrome-foot"></div>
+
+<script src="/kamelia/assets/site.js"></script>
+</body>
+</html>

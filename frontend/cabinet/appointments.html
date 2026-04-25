@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Мои записи — Камелия·Мед</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="cab-shell">
+  <div id="cab-side"></div>
+
+  <div class="cab-content">
+    <section class="cab-greeting">
+      <div class="hello">— История визитов</div>
+      <h1>Мои&nbsp;<em>записи</em></h1>
+      <p>Все ваши визиты — предстоящие, выполненные и&nbsp;отменённые. Можно отменить запись или&nbsp;записаться на&nbsp;новую.</p>
+    </section>
+
+    <div class="tab-row">
+      <button class="tab-pill active" data-filter="all">Все<span class="ct" id="cAll">0</span></button>
+      <button class="tab-pill" data-filter="upcoming">Предстоящие<span class="ct" id="cUp">0</span></button>
+      <button class="tab-pill" data-filter="done">Завершённые<span class="ct" id="cDn">0</span></button>
+      <button class="tab-pill" data-filter="cancelled">Отменённые<span class="ct" id="cCx">0</span></button>
+    </div>
+
+    <div class="cab-card">
+      <div class="cab-card-head">
+        <h2>Журнал&nbsp;<em>визитов</em></h2>
+        <a href="/kamelia/booking.html" class="btn btn--brand btn--sm">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" style="width:12px;height:12px;"><path d="M7 1v12M1 7h12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Новая запись</span>
+        </a>
+      </div>
+      <div id="apptListMount">— загрузка —</div>
+    </div>
+
+    <div style="margin-top: 24px; padding: 20px 24px; background: var(--surface-3); border-radius: var(--r-2); font-size: 13px; color: var(--ink-3);">
+      <strong style="color: var(--ink);">Уникальный код пациента:</strong> <span id="patientCode" style="font-family: 'JetBrains Mono', monospace; color: var(--brand); font-weight: 500;">—</span> ·  при&nbsp;звонке в&nbsp;клинику называйте этот код, чтобы&nbsp;администратор быстрее нашёл вашу карту.
+    </div>
+  </div>
+</div>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script>
+const { api, initCabinetPage, fmtDate } = window.KAMELIA_CABINET;
+
+let allAppts = [];
+let activeFilter = 'all';
+
+const STATUS_LABEL = { new: 'новая', confirmed: 'подтверждена', done: 'выполнена', cancelled: 'отменена' };
+
+function render() {
+  const mount = document.getElementById('apptListMount');
+  let list = allAppts;
+  if (activeFilter === 'upcoming') list = allAppts.filter(a => a.status === 'new' || a.status === 'confirmed');
+  if (activeFilter === 'done')     list = allAppts.filter(a => a.status === 'done');
+  if (activeFilter === 'cancelled')list = allAppts.filter(a => a.status === 'cancelled');
+
+  if (list.length === 0) {
+    mount.innerHTML = `
+      <div class="appt-empty">
+        <div class="marker">+</div>
+        <h3>${activeFilter === 'all' ? 'Записей пока нет' : 'В этой категории пусто'}</h3>
+        <p>${activeFilter === 'all' ? 'Запишитесь — все визиты появятся здесь.' : 'Попробуйте другой фильтр.'}</p>
+        ${activeFilter === 'all' ? '<a href="/kamelia/booking.html" class="btn btn--brand"><span>Записаться</span></a>' : ''}
+      </div>
+    `;
+    return;
+  }
+
+  mount.innerHTML = `
+    <div class="appt-list">
+      ${list.map((a, i) => {
+        const canCancel = a.status === 'new' || a.status === 'confirmed';
+        return `
+          <div class="appt-item" data-id="${a.id}">
+            <div class="appt-num">${String(list.length - i).padStart(2, '0')}</div>
+            <div class="appt-info">
+              <div class="appt-service">${a.service || '<em>услуга уточняется</em>'}</div>
+              <div class="appt-meta">
+                <span>№ ${String(a.id).padStart(4, '0')}</span>
+                <span>📍 ${a.branch}</span>
+                ${a.preferred_date ? `<span>${fmtDate(a.preferred_date)}</span>` : ''}
+                ${a.preferred_time ? `<span>${a.preferred_time}</span>` : ''}
+                <span style="opacity: .7;">создана ${fmtDate(a.created_at)}</span>
+              </div>
+              ${a.note ? `<div class="appt-note">«${a.note}»</div>` : ''}
+            </div>
+            <div class="appt-status" data-status="${a.status}">${STATUS_LABEL[a.status]}</div>
+            <div class="appt-actions">
+              ${canCancel ? `<button class="danger" data-action="cancel" data-id="${a.id}">отменить</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  mount.querySelectorAll('button[data-action="cancel"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Отменить запись?')) return;
+      const id = +btn.dataset.id;
+      try {
+        await api(`/api/appointments/${id}`, { method: 'DELETE' });
+        const a = allAppts.find(x => x.id === id);
+        if (a) a.status = 'cancelled';
+        updateCounts();
+        render();
+      } catch (err) {
+        alert('Не удалось отменить: ' + err.message);
+      }
+    });
+  });
+}
+
+function updateCounts() {
+  const total = allAppts.length;
+  const up = allAppts.filter(a => a.status === 'new' || a.status === 'confirmed').length;
+  const dn = allAppts.filter(a => a.status === 'done').length;
+  const cx = allAppts.filter(a => a.status === 'cancelled').length;
+  document.getElementById('cAll').textContent = total;
+  document.getElementById('cUp').textContent = up;
+  document.getElementById('cDn').textContent = dn;
+  document.getElementById('cCx').textContent = cx;
+}
+
+(async () => {
+  const user = await initCabinetPage('appointments');
+  if (!user) return;
+
+  document.getElementById('patientCode').textContent = `КМ-${String(user.id).padStart(4, '0')}`;
+
+  document.querySelectorAll('.tab-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  try {
+    allAppts = await api('/api/appointments');
+    updateCounts();
+    render();
+  } catch (err) {
+    document.getElementById('apptListMount').innerHTML = `<p style="color: var(--accent);">Ошибка: ${err.message}</p>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Кабинет — Камелия·Мед</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="cab-shell">
+  <div id="cab-side"></div>
+
+  <div class="cab-content">
+
+    <section class="cab-greeting">
+      <div class="hello" id="cabHello">— Здравствуйте</div>
+      <h1 id="cabName">—</h1>
+      <p>Здесь видны ваши предстоящие визиты, можно записаться на&nbsp;новый приём и&nbsp;управлять данными.</p>
+    </section>
+
+    <div class="cab-stat-row">
+      <div class="cab-stat-cell">
+        <div class="stat-num"><em id="stTotal">0</em></div>
+        <div class="stat-label">Всего визитов</div>
+      </div>
+      <div class="cab-stat-cell">
+        <div class="stat-num" id="stUpcoming">0</div>
+        <div class="stat-label">Предстоящих</div>
+      </div>
+      <div class="cab-stat-cell">
+        <div class="stat-num" id="stMember">—</div>
+        <div class="stat-label">Участник с</div>
+      </div>
+    </div>
+
+    <div class="cab-quick">
+      <a href="/kamelia/booking.html" class="cab-quick-card">
+        <div>
+          <div class="label">Быстрое действие</div>
+          <h4>Записаться<br>на&nbsp;<em>приём</em></h4>
+        </div>
+        <div class="qc-arrow"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+      <a href="/kamelia/cabinet/profile.html" class="cab-quick-card">
+        <div>
+          <div class="label">Анкета</div>
+          <h4>Личные<br><em>данные</em></h4>
+        </div>
+        <div class="qc-arrow"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+    </div>
+
+    <div class="cab-card">
+      <div class="cab-card-head">
+        <h2>Ближайшие&nbsp;<em>визиты</em></h2>
+        <a href="/kamelia/cabinet/appointments.html" class="btn btn--text btn--sm" style="padding: 0;">
+          <span>Все записи</span>
+          <svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" style="width:12px;height:12px;"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div id="upcomingList">— загрузка —</div>
+    </div>
+
+    <div class="cab-card" style="background: var(--surface-3);">
+      <div class="cab-card-head" style="padding-bottom: 16px; margin-bottom: 20px;">
+        <h2 style="font-size: 22px;">Свяжитесь с&nbsp;нами</h2>
+      </div>
+      <div class="grid grid-2" style="gap: 32px;">
+        <div>
+          <div class="label" style="margin-bottom: 8px;">Единая линия</div>
+          <a href="tel:+78432100909" style="font-size: 32px; font-weight: 500; letter-spacing: -.025em; color: var(--ink); display: block; margin-bottom: 4px; font-feature-settings: 'tnum' 1;">210·09·09</a>
+          <div style="font-size: 13px; color: var(--ink-3);">пн—вс с 9:00 до 21:00</div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom: 8px;">Или в мессенджерах</div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
+            <a href="#" style="color: var(--ink); border-bottom: 1px solid var(--brand); align-self: flex-start;">Telegram · @Kamelia_med</a>
+            <a href="#" style="color: var(--ink); border-bottom: 1px solid var(--brand); align-self: flex-start;">WhatsApp</a>
+            <a href="mailto:hello@kamelia-med.ru" style="color: var(--ink); border-bottom: 1px solid var(--brand); align-self: flex-start;">hello@kamelia-med.ru</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script>
+const { api, initCabinetPage, fmtDate } = window.KAMELIA_CABINET;
+
+(async () => {
+  const user = await initCabinetPage('home');
+  if (!user) return;
+
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
+  document.getElementById('cabHello').textContent = `— ${greet}`;
+  document.getElementById('cabName').innerHTML = `${user.name.split(' ')[0]}<em>,</em>`;
+
+  const since = new Date(user.created_at);
+  document.getElementById('stMember').textContent = since.toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' });
+
+  try {
+    const appts = await api('/api/appointments');
+    const total = appts.length;
+    const upcoming = appts.filter(a => a.status === 'new' || a.status === 'confirmed');
+
+    document.getElementById('stTotal').textContent = total;
+    document.getElementById('stUpcoming').textContent = upcoming.length;
+
+    const upcomingEl = document.getElementById('upcomingList');
+    if (upcoming.length === 0) {
+      upcomingEl.innerHTML = `
+        <div class="appt-empty">
+          <div class="marker">+</div>
+          <h3>Нет предстоящих визитов</h3>
+          <p>Ничего не запланировано — но это легко исправить.</p>
+          <a href="/kamelia/booking.html" class="btn btn--brand"><span>Записаться</span></a>
+        </div>
+      `;
+    } else {
+      upcomingEl.innerHTML = `
+        <div class="appt-list">
+          ${upcoming.slice(0, 3).map((a, i) => `
+            <div class="appt-item">
+              <div class="appt-num">${String(i + 1).padStart(2, '0')}</div>
+              <div class="appt-info">
+                <div class="appt-service">${a.service || '<em>услуга уточняется</em>'}</div>
+                <div class="appt-meta">
+                  <span>📍 ${a.branch}</span>
+                  ${a.preferred_date ? `<span>${fmtDate(a.preferred_date)}</span>` : ''}
+                  ${a.preferred_time ? `<span>${a.preferred_time}</span>` : ''}
+                </div>
+                ${a.note ? `<div class="appt-note">${a.note}</div>` : ''}
+              </div>
+              <div class="appt-status" data-status="${a.status}">${a.status === 'new' ? 'новая' : a.status === 'confirmed' ? 'подтверждена' : a.status === 'done' ? 'выполнена' : 'отменена'}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+  } catch (err) {
+    document.getElementById('upcomingList').innerHTML = `<p style="color: var(--accent);">Ошибка загрузки: ${err.message}</p>`;
+  }
+})();
+</script>
+</body>
+</html>

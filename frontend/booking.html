@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Запись на приём — Камелия·Мед</title>
+<meta name="description" content="Запишитесь на приём к стоматологу. Перезвоним за 15 минут.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+</head>
+<body data-page="booking">
+
+<div id="chrome-head"></div>
+
+<main>
+  <div class="container">
+    <div class="crumb">
+      <a href="/kamelia/">Главная</a><span class="sep">/</span><span>Запись на приём</span>
+    </div>
+
+    <div class="grid grid-1-2 mb-6" style="gap: 56px; align-items: start;">
+      <div class="r in">
+        <section class="page-title">
+          <div class="label">Запись на приём</div>
+          <h1>Заполните и&nbsp;<span class="em-italic">ждите звонка</span></h1>
+          <p class="lede">Перезваниваем в&nbsp;течение 15&nbsp;минут — живой администратор, не&nbsp;робот. Подберём время, специалиста и&nbsp;ближайший к&nbsp;вам филиал.</p>
+        </section>
+
+        <div class="sidekit mb-3" style="margin-top: 24px;">
+          <h4>Что включает первичный визит</h4>
+          <ul>
+            <li>Беседа и&nbsp;сбор анамнеза</li>
+            <li>Внешний осмотр полости рта</li>
+            <li>Прицельный снимок при&nbsp;необходимости</li>
+            <li>Письменный план лечения с&nbsp;альтернативами</li>
+            <li>Фиксированная смета в&nbsp;договоре</li>
+          </ul>
+        </div>
+
+        <div class="sidenote">
+          <strong>Острая боль?</strong> Звоните на&nbsp;<a href="tel:+78432100909" style="color: var(--brand); border-bottom: 1px solid currentColor;">210·09·09</a> — примем сегодня в&nbsp;любом филиале.
+        </div>
+
+        <div style="margin-top: 32px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-2); display: flex; align-items: center; gap: 18px;">
+          <div style="width: 48px; height: 48px; background: var(--brand-50); color: var(--brand); border-radius: var(--r-2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; color: var(--ink-3); margin-bottom: 2px;">Или сразу позвонить</div>
+            <a href="tel:+78432100909" style="font-size: 28px; font-weight: 500; color: var(--ink); letter-spacing: -.025em; font-feature-settings: 'tnum' 1;">210·09·09</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="r d2">
+        <div class="form-card">
+          <div class="form-card-head">
+            <h3>Запись на&nbsp;<em>приём</em></h3>
+            <p>Заполняется один раз — данные сохраняются в&nbsp;вашем кабинете.</p>
+          </div>
+          <div class="form-card-body">
+
+            <!-- USER PILL: shown when logged in -->
+            <div class="user-pill" id="userPill" style="display: none;">
+              <div class="avatar" id="upAvatar">—</div>
+              <div class="info">
+                <div class="pname">
+                  <span id="upName">—</span>
+                  <svg class="check-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3 3 7-7"/></svg>
+                </div>
+                <div class="pdesc">Записываемся от&nbsp;имени аккаунта · поля заполнены</div>
+              </div>
+              <div class="actions">
+                <a href="/kamelia/cabinet/" title="Открыть кабинет">Кабинет</a>
+                <a href="#" id="upLogout" title="Записаться от другого имени">Сменить</a>
+              </div>
+            </div>
+
+            <!-- NOT-LOGGED-IN PILL: prompt to login -->
+            <div class="user-pill" id="guestPill" style="display: none; background: var(--surface-3); border-color: var(--line); border-style: dashed;">
+              <div class="avatar" style="background: var(--ink-2);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;"><circle cx="12" cy="8" r="4"/><path d="M3 22a9 9 0 0 1 18 0"/></svg>
+              </div>
+              <div class="info">
+                <div class="pname" style="color: var(--ink);">Уже наш пациент?</div>
+                <div class="pdesc" style="color: var(--ink-3);">Войдите — заполним всё за&nbsp;вас</div>
+              </div>
+              <div class="actions">
+                <a href="/kamelia/cabinet/login.html" style="background: var(--ink); color: var(--bg);">Войти</a>
+              </div>
+            </div>
+
+            <form id="bookingForm" novalidate>
+              <div class="form-success" id="formSuccess">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                <span>Заявка принята. Перезвоним в течение 15 минут.</span>
+              </div>
+
+              <div class="field-rule">Контактные данные</div>
+              <div class="form-row">
+                <div class="field" id="fieldName">
+                  <label for="fName">Имя и фамилия</label>
+                  <input type="text" id="fName" required placeholder="Иван Иванов" autocomplete="name">
+                  <span class="field-prefilled" id="prefName">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3 3 7-7"/></svg>
+                    из кабинета
+                  </span>
+                </div>
+                <div class="field" id="fieldPhone">
+                  <label for="fPhone">Телефон</label>
+                  <input type="tel" id="fPhone" required placeholder="+7 (___) ___-__-__" autocomplete="tel">
+                  <span class="field-prefilled" id="prefPhone">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3 3 7-7"/></svg>
+                    из кабинета
+                  </span>
+                </div>
+              </div>
+
+              <div class="field-rule">Параметры визита</div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Филиал</label>
+                  <div class="kselect" data-placeholder="— выберите филиал —">
+                    <select id="fBranch" required>
+                      <option value="" disabled selected hidden>— выберите филиал —</option>
+                      <option value="ул. Чистопольская, 77/2" data-meta="Ново-Савиновский">ул. Чистопольская, 77/2</option>
+                      <option value="ул. Сибгата Хакима, 51" data-meta="Ново-Савиновский">ул. Сибгата Хакима, 51</option>
+                      <option value="ул. Ташаяк, 2а" data-meta="Кировский">ул. Ташаяк, 2а</option>
+                      <option value="пр. Победы, 78" data-meta="Приволжский">пр. Победы, 78</option>
+                      <option value="ул. Кул Гали, 27" data-meta="Советский">ул. Кул Гали, 27</option>
+                      <option value="любой ближайший" data-meta="на ваше усмотрение">любой ближайший</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Услуга</label>
+                  <div class="kselect" data-placeholder="— выберите услугу —">
+                    <select id="fService">
+                      <option value="" disabled selected hidden>— выберите услугу —</option>
+                      <option value="Первичная консультация" data-meta="от 1 000 ₽">Первичная консультация</option>
+                      <option value="Профессиональная гигиена" data-meta="от 1 200 ₽">Профессиональная гигиена</option>
+                      <option value="Лечение кариеса" data-meta="от 4 900 ₽">Лечение кариеса</option>
+                      <option value="Брекеты или элайнеры" data-meta="ортодонтия">Брекеты или элайнеры</option>
+                      <option value="Имплантация" data-meta="от 26 000 ₽">Имплантация</option>
+                      <option value="Отбеливание" data-meta="от 9 900 ₽">Отбеливание</option>
+                      <option value="Детский приём" data-meta="от 700 ₽">Детский приём</option>
+                      <option value="Не уверен — посоветуйте" data-meta="консультация">Не уверен — посоветуйте</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="field">
+                  <label>Желаемая дата</label>
+                  <div class="kdate" data-placeholder="— любая ближайшая —">
+                    <input type="date" id="fDate">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Время</label>
+                  <div class="kselect" data-placeholder="— любое время —">
+                    <select id="fTime">
+                      <option value="" disabled selected hidden>— любое время —</option>
+                      <option value="утро · 9:00–12:00" data-meta="будни и выходные">утро · 9:00–12:00</option>
+                      <option value="день · 12:00–17:00" data-meta="самые загруженные">день · 12:00–17:00</option>
+                      <option value="вечер · 17:00–21:00" data-meta="после работы">вечер · 17:00–21:00</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="fNote">Комментарий</label>
+                <textarea id="fNote" rows="2" placeholder="Если есть пожелания или особенности — напишите."></textarea>
+              </div>
+
+              <div class="consents">
+                <label class="consent">
+                  <input type="checkbox" id="fConsentData" checked required>
+                  <span>
+                    Согласен с&nbsp;<a href="/kamelia/legal/privacy.html" data-modal data-modal-title="Политика обработки персональных данных">политикой обработки персональных данных</a> и&nbsp;<a href="/kamelia/legal/terms.html" data-modal data-modal-title="Условия обслуживания">условиями обслуживания</a>.
+                    <span class="consent-required">· обязательно</span>
+                  </span>
+                </label>
+                <label class="consent">
+                  <input type="checkbox" id="fConsentNotify" checked>
+                  <span>Хочу получать напоминания о&nbsp;визитах и&nbsp;осмотрах по&nbsp;SMS&nbsp;/ Telegram. <span style="color: var(--ink-3); font-size: 11px;">· можно отключить в&nbsp;кабинете</span></span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn--brand btn--lg" id="submitBtn" style="width: 100%; justify-content: center;">
+                <span id="submitLabel">Отправить заявку</span>
+                <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+
+              <div style="margin-top: 16px; font-size: 13px; color: var(--ink-3); text-align: center;" id="loginHint">
+                Уже наш пациент? <a href="/kamelia/cabinet/login.html" style="color: var(--brand); border-bottom: 1px solid currentColor;">Войдите в&nbsp;кабинет</a> — заполнится автоматически.
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="chrome-foot"></div>
+
+<script src="/kamelia/assets/site.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ─── PHONE MASK ───
+  const phone = document.getElementById('fPhone');
+  phone.addEventListener('input', () => {
+    let v = phone.value.replace(/\D/g, '');
+    if (v.startsWith('8')) v = '7' + v.slice(1);
+    if (v && !v.startsWith('7')) v = '7' + v;
+    v = v.slice(0, 11);
+    let out = '+7';
+    if (v.length > 1) out += ' (' + v.slice(1, 4);
+    if (v.length >= 4) out += ') ' + v.slice(4, 7);
+    if (v.length >= 7) out += '-' + v.slice(7, 9);
+    if (v.length >= 9) out += '-' + v.slice(9, 11);
+    phone.value = out;
+  });
+
+  // ─── AUTO-FILL FROM CABINET ───
+  const userPill = document.getElementById('userPill');
+  const guestPill = document.getElementById('guestPill');
+  const loginHint = document.getElementById('loginHint');
+  const fName = document.getElementById('fName');
+  const fPhone = document.getElementById('fPhone');
+  const prefName = document.getElementById('prefName');
+  const prefPhone = document.getElementById('prefPhone');
+
+  // pre-set query params if any (e.g., from service link with ?service=therapy)
+  const params = new URLSearchParams(location.search);
+  const presetService = params.get('service');
+  if (presetService) {
+    const sel = document.getElementById('fService');
+    if (sel) {
+      const opt = Array.from(sel.options).find(o => o.value.toLowerCase().includes(presetService.toLowerCase()));
+      if (opt) {
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  }
+
+  fetch('/api/auth/me', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(user => {
+      if (user) {
+        // logged in
+        const initial = (user.name || user.email)[0].toUpperCase();
+        document.getElementById('upAvatar').textContent = initial;
+        document.getElementById('upName').textContent = user.name;
+        userPill.style.display = 'flex';
+        loginHint.style.display = 'none';
+
+        // pre-fill
+        if (user.name && !fName.value) {
+          fName.value = user.name;
+          setTimeout(() => prefName.classList.add('show'), 200);
+        }
+        if (user.phone && !fPhone.value) {
+          fPhone.value = user.phone;
+          setTimeout(() => prefPhone.classList.add('show'), 350);
+        }
+
+        // logout link
+        document.getElementById('upLogout').addEventListener('click', async e => {
+          e.preventDefault();
+          try {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+          } catch {}
+          location.reload();
+        });
+
+        // remove prefilled badges if user edits
+        fName.addEventListener('input', () => prefName.classList.remove('show'), { once: true });
+        fPhone.addEventListener('input', () => prefPhone.classList.remove('show'), { once: true });
+      } else {
+        guestPill.style.display = 'flex';
+        loginHint.style.display = 'none';
+      }
+    })
+    .catch(() => {
+      // network error — show neither, leave default hint
+    });
+
+  // ─── SUBMIT ───
+  const form = document.getElementById('bookingForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitLabel = document.getElementById('submitLabel');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // validate
+    let ok = true;
+    [fName, fPhone].forEach(el => {
+      if (!el.value.trim()) {
+        el.classList.add('invalid');
+        ok = false;
+      } else el.classList.remove('invalid');
+    });
+    const branchSel = document.getElementById('fBranch');
+    if (!branchSel.value) {
+      branchSel.closest('.field').classList.add('invalid');
+      ok = false;
+    } else {
+      branchSel.closest('.field').classList.remove('invalid');
+    }
+    const consent = document.getElementById('fConsentData');
+    if (!consent.checked) {
+      consent.closest('.consent').style.color = 'var(--accent)';
+      ok = false;
+    } else {
+      consent.closest('.consent').style.color = '';
+    }
+
+    if (!ok) {
+      // shake first invalid
+      const firstInvalid = form.querySelector('.invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const payload = {
+      name: fName.value.trim(),
+      phone: fPhone.value.trim(),
+      branch: branchSel.value,
+      service: document.getElementById('fService').value || null,
+      preferred_date: document.getElementById('fDate').value || null,
+      preferred_time: document.getElementById('fTime').value || null,
+      note: document.getElementById('fNote').value.trim() || null,
+    };
+
+    submitBtn.disabled = true;
+    submitLabel.textContent = 'Отправляем…';
+
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      const success = document.getElementById('formSuccess');
+      if (res.ok) {
+        success.classList.add('show');
+        success.querySelector('span').textContent = `Заявка №${data.id || '—'} принята. Перезвоним в течение 15 минут.`;
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // reset only optional fields
+        document.getElementById('fNote').value = '';
+        document.getElementById('fDate').value = '';
+        const ts = document.getElementById('fTime');
+        ts.value = '';
+        ts.dispatchEvent(new Event('change', { bubbles: true }));
+        setTimeout(() => success.classList.remove('show'), 10000);
+      } else {
+        alert(data.detail || 'Ошибка отправки. Позвоните по 210·09·09');
+      }
+    } catch (err) {
+      alert('Сервер недоступен. Позвоните по 210·09·09');
+    } finally {
+      submitBtn.disabled = false;
+      submitLabel.textContent = 'Отправить заявку';
+    }
+  });
+}, { once: true });
+</script>
+</body>
+</html>
