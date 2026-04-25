@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Заявки — Админ-панель — Камелия·Мед</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+<link rel="stylesheet" href="/kamelia/admin/admin.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="admin-shell">
+  <div id="admin-side"></div>
+
+  <div class="admin-content">
+    <section class="admin-greeting">
+      <div class="label label--accent">Заявки</div>
+      <h1>Журнал&nbsp;<em>заявок</em></h1>
+      <p>Все заявки от&nbsp;пациентов — фильтры по&nbsp;статусу, поиск по&nbsp;имени и&nbsp;телефону, изменение статуса в&nbsp;один клик.</p>
+    </section>
+
+    <div class="admin-card">
+      <div class="admin-filters">
+        <div class="filter-search">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6.5" cy="6.5" r="4.5"/><path d="m12.5 12.5-2.7-2.7" stroke-linecap="round"/></svg>
+          <input type="search" id="qInput" placeholder="Поиск по имени, телефону, услуге, комментарию…" />
+        </div>
+        <div class="filter-pills" id="statusPills">
+          <button class="filter-pill active" data-status="all">Все<span class="ct" id="cAll">0</span></button>
+          <button class="filter-pill" data-status="new">Новые<span class="ct" id="cNew">0</span></button>
+          <button class="filter-pill" data-status="confirmed">Подтв.<span class="ct" id="cConfirmed">0</span></button>
+          <button class="filter-pill" data-status="done">Выполн.<span class="ct" id="cDone">0</span></button>
+          <button class="filter-pill" data-status="cancelled">Отмен.<span class="ct" id="cCancelled">0</span></button>
+        </div>
+        <div class="filter-meta">Показано <strong id="visibleCount">0</strong> из <strong id="totalCount">0</strong></div>
+      </div>
+
+      <div id="apptList">
+        <div class="admin-empty"><div class="marker">⟳</div><p>Загрузка…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script src="/kamelia/admin/admin.js"></script>
+<script>
+const { api, initAdminPage, fmtDate, fmtDateTime, fmtPhoneTel, STATUS_LABEL, STATUSES } = window.KAMELIA_ADMIN;
+
+let allAppts = [];
+let activeStatus = 'all';
+let activeQuery = '';
+
+const escapeHtml = s => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadAppts() {
+  try {
+    allAppts = await api('/api/admin/appointments?limit=500');
+    updateCounts();
+    render();
+  } catch (err) {
+    document.getElementById('apptList').innerHTML = `<div class="admin-empty"><h3>Ошибка</h3><p>${err.message}</p></div>`;
+  }
+}
+
+function updateCounts() {
+  document.getElementById('cAll').textContent = allAppts.length;
+  document.getElementById('cNew').textContent = allAppts.filter(a => a.status === 'new').length;
+  document.getElementById('cConfirmed').textContent = allAppts.filter(a => a.status === 'confirmed').length;
+  document.getElementById('cDone').textContent = allAppts.filter(a => a.status === 'done').length;
+  document.getElementById('cCancelled').textContent = allAppts.filter(a => a.status === 'cancelled').length;
+  document.getElementById('totalCount').textContent = allAppts.length;
+}
+
+function filtered() {
+  let list = allAppts;
+  if (activeStatus !== 'all') list = list.filter(a => a.status === activeStatus);
+  if (activeQuery) {
+    const q = activeQuery.toLowerCase();
+    list = list.filter(a =>
+      (a.name || '').toLowerCase().includes(q)
+      || (a.phone || '').toLowerCase().includes(q)
+      || (a.service || '').toLowerCase().includes(q)
+      || (a.note || '').toLowerCase().includes(q)
+      || (a.branch || '').toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+function render() {
+  const list = filtered();
+  document.getElementById('visibleCount').textContent = list.length;
+
+  const mount = document.getElementById('apptList');
+  if (!list.length) {
+    mount.innerHTML = `<div class="admin-empty"><div class="marker">∅</div><h3>Ничего не найдено</h3><p>Попробуйте изменить фильтр или сбросить поиск.</p></div>`;
+    return;
+  }
+
+  mount.innerHTML = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width:60px;">№</th>
+          <th>Пациент</th>
+          <th>Услуга</th>
+          <th>Филиал</th>
+          <th>Желаемое время</th>
+          <th>Поступило</th>
+          <th>Статус</th>
+          <th class="action">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(a => `
+          <tr data-id="${a.id}">
+            <td class="num">#${String(a.id).padStart(4, '0')}</td>
+            <td>
+              <div class="row-name">${escapeHtml(a.name)}${a.user_id ? ' <span style="color: var(--brand); font-size: 10px; padding: 2px 6px; background: var(--brand-50); border-radius: 99px; margin-left:4px;">КМ-' + String(a.user_id).padStart(4,'0') + '</span>' : ''}</div>
+              <div class="row-phone"><a href="tel:+${fmtPhoneTel(a.phone)}">${escapeHtml(a.phone)}</a></div>
+              ${a.note ? `<div class="row-note">«${escapeHtml(a.note)}»</div>` : ''}
+            </td>
+            <td>
+              <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+            </td>
+            <td class="muted">${escapeHtml(a.branch)}</td>
+            <td class="muted">${a.preferred_date ? fmtDate(a.preferred_date) : '—'}${a.preferred_time ? `<br><span style="font-size:11px;">${escapeHtml(a.preferred_time)}</span>` : ''}</td>
+            <td class="muted">${fmtDateTime(a.created_at)}</td>
+            <td>
+              <div class="st-select">
+                ${STATUSES.map(s => `<button class="${s === a.status ? 'active' : ''}" data-act="status" data-id="${a.id}" data-value="${s}" title="${STATUS_LABEL[s]}">${STATUS_LABEL[s]}</button>`).join('')}
+              </div>
+            </td>
+            <td class="action">
+              <div class="row-action">
+                <a href="tel:+${fmtPhoneTel(a.phone)}"><button class="brand">📞 Позвонить</button></a>
+                <button class="danger" data-act="delete" data-id="${a.id}">×</button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <div class="admin-mobile-cards">
+      ${list.map(a => `
+        <div class="admin-mobile-card" data-id="${a.id}">
+          <div class="top">
+            <div>
+              <div class="row-name">${escapeHtml(a.name)}</div>
+              <div class="row-phone"><a href="tel:+${fmtPhoneTel(a.phone)}">${escapeHtml(a.phone)}</a></div>
+            </div>
+            <span class="st-pill st-${a.status}">${STATUS_LABEL[a.status]}</span>
+          </div>
+          <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+          <div class="row-meta">
+            <span>📍 ${escapeHtml(a.branch)}</span>
+            ${a.preferred_date ? `<span>${fmtDate(a.preferred_date)} ${a.preferred_time ? '· ' + escapeHtml(a.preferred_time) : ''}</span>` : ''}
+            <span style="opacity:.7;">создана ${fmtDateTime(a.created_at)}</span>
+          </div>
+          ${a.note ? `<div class="row-note" style="margin-top:8px;max-width:none;">«${escapeHtml(a.note)}»</div>` : ''}
+          <div class="row-action" style="margin-top: 12px;">
+            <div class="st-select">
+              ${STATUSES.map(s => `<button class="${s === a.status ? 'active' : ''}" data-act="status" data-id="${a.id}" data-value="${s}">${STATUS_LABEL[s]}</button>`).join('')}
+            </div>
+            <button class="danger" data-act="delete" data-id="${a.id}">×</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // bind status buttons
+  mount.querySelectorAll('button[data-act="status"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = +btn.dataset.id;
+      const newStatus = btn.dataset.value;
+      const a = allAppts.find(x => x.id === id);
+      if (!a || a.status === newStatus) return;
+      btn.disabled = true;
+      try {
+        const updated = await api(`/api/admin/appointments/${id}`, {
+          method: 'PATCH',
+          body: { status: newStatus },
+        });
+        Object.assign(a, updated);
+        updateCounts();
+        render();
+      } catch (err) {
+        alert('Ошибка обновления статуса: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // bind delete
+  mount.querySelectorAll('button[data-act="delete"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = +btn.dataset.id;
+      if (!confirm(`Удалить заявку #${String(id).padStart(4, '0')} навсегда?`)) return;
+      try {
+        await api(`/api/admin/appointments/${id}`, { method: 'DELETE' });
+        allAppts = allAppts.filter(a => a.id !== id);
+        updateCounts();
+        render();
+      } catch (err) {
+        alert('Ошибка удаления: ' + err.message);
+      }
+    });
+  });
+}
+
+(async () => {
+  const user = await initAdminPage('appointments');
+  if (!user) return;
+
+  // status pills
+  document.querySelectorAll('#statusPills .filter-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#statusPills .filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeStatus = btn.dataset.status;
+      render();
+    });
+  });
+
+  // search debounced
+  let t;
+  document.getElementById('qInput').addEventListener('input', e => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      activeQuery = e.target.value.trim();
+      render();
+    }, 150);
+  });
+
+  loadAppts();
+})();
+</script>
+</body>
+</html>

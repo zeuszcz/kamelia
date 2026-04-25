@@ -32,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Boolean, or_, text as sql_text
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 import bcrypt
 from jose import jwt, JWTError
@@ -76,6 +76,7 @@ class User(Base):
     name = Column(String(120), nullable=False)
     phone = Column(String(40), nullable=True)
     birth_date = Column(String(10), nullable=True)  # YYYY-MM-DD
+    is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     appointments = relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
@@ -99,6 +100,39 @@ class Appointment(Base):
 
 
 Base.metadata.create_all(engine)
+
+
+# ── Lightweight migration: add columns that didn't exist in older deployments ──
+def _migrate_db():
+    with engine.begin() as conn:
+        cols = [r[1] for r in conn.execute(sql_text("PRAGMA table_info(users)")).fetchall()]
+        if "is_admin" not in cols:
+            conn.execute(sql_text("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"))
+
+
+_migrate_db()
+
+
+# ── Auto-promote configured emails to admin on startup ──
+ADMIN_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get("KAMELIA_ADMIN_EMAILS", "").split(",")
+    if e.strip()
+}
+
+
+def _ensure_admins():
+    if not ADMIN_EMAILS:
+        return
+    with SessionLocal() as db:
+        for email in ADMIN_EMAILS:
+            user = db.query(User).filter(User.email == email).first()
+            if user and not user.is_admin:
+                user.is_admin = True
+                db.commit()
+
+
+_ensure_admins()
 
 
 def get_db():
@@ -162,6 +196,12 @@ def get_current_user(
     return user
 
 
+def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Доступ только для администраторов")
+    return user
+
+
 def get_current_user_optional(
     request: Request,
     db: Session = Depends(get_db),
@@ -208,6 +248,7 @@ class UserOut(BaseModel):
     name: str
     phone: Optional[str] = None
     birth_date: Optional[str] = None
+    is_admin: bool = False
     created_at: datetime
 
     class Config:
@@ -218,6 +259,15 @@ class UserUpdateIn(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=120)
     phone: Optional[str] = None
     birth_date: Optional[str] = None
+
+
+class AdminAppointmentPatch(BaseModel):
+    status: Optional[str] = Field(default=None, pattern=r"^(new|confirmed|done|cancelled)$")
+    note: Optional[str] = None
+
+
+class AdminUserPatch(BaseModel):
+    is_admin: Optional[bool] = None
 
 
 class AppointmentIn(BaseModel):
@@ -324,6 +374,7 @@ def register(payload: RegisterIn, response: Response, db: Session = Depends(get_
         password_hash=hash_password(payload.password),
         name=payload.name.strip(),
         phone=payload.phone,
+        is_admin=payload.email.lower() in ADMIN_EMAILS,
     )
     db.add(user)
     db.commit()
@@ -479,6 +530,122 @@ def cancel_appointment(
     a.status = "cancelled"
     db.commit()
     return {"ok": True, "id": a.id}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# ADMIN ENDPOINTS  (require is_admin)
+# ─────────────────────────────────────────────────────────────────────
+
+@app.get("/api/admin/stats")
+def admin_stats(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    week_start = (datetime.now(timezone.utc) - timedelta(days=7)).date().isoformat()
+    return {
+        "appointments_total": db.query(Appointment).count(),
+        "appointments_new": db.query(Appointment).filter(Appointment.status == "new").count(),
+        "appointments_confirmed": db.query(Appointment).filter(Appointment.status == "confirmed").count(),
+        "appointments_done": db.query(Appointment).filter(Appointment.status == "done").count(),
+        "appointments_cancelled": db.query(Appointment).filter(Appointment.status == "cancelled").count(),
+        "appointments_today_preferred": db.query(Appointment).filter(Appointment.preferred_date == today).count(),
+        "appointments_last_7d": db.query(Appointment).filter(Appointment.created_at >= datetime.now(timezone.utc) - timedelta(days=7)).count(),
+        "users_total": db.query(User).count(),
+        "users_admins": db.query(User).filter(User.is_admin == True).count(),
+        "users_last_7d": db.query(User).filter(User.created_at >= datetime.now(timezone.utc) - timedelta(days=7)).count(),
+    }
+
+
+@app.get("/api/admin/appointments", response_model=List[AppointmentOut])
+def admin_list_appointments(
+    status: Optional[str] = None,
+    branch: Optional[str] = None,
+    q: Optional[str] = None,
+    limit: int = 500,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    qry = db.query(Appointment)
+    if status and status != "all":
+        qry = qry.filter(Appointment.status == status)
+    if branch and branch != "all":
+        qry = qry.filter(Appointment.branch == branch)
+    if q:
+        like = f"%{q.lower()}%"
+        qry = qry.filter(
+            or_(
+                Appointment.name.ilike(like),
+                Appointment.phone.ilike(like),
+                Appointment.note.ilike(like),
+                Appointment.service.ilike(like),
+            )
+        )
+    return qry.order_by(Appointment.created_at.desc()).limit(min(max(1, limit), 1000)).all()
+
+
+@app.patch("/api/admin/appointments/{appt_id}", response_model=AppointmentOut)
+def admin_update_appointment(
+    appt_id: int,
+    payload: AdminAppointmentPatch,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    a = db.get(Appointment, appt_id)
+    if not a:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+    if payload.status is not None:
+        a.status = payload.status
+    if payload.note is not None:
+        a.note = payload.note
+    db.commit()
+    db.refresh(a)
+    return a
+
+
+@app.delete("/api/admin/appointments/{appt_id}")
+def admin_delete_appointment(
+    appt_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    a = db.get(Appointment, appt_id)
+    if not a:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+    db.delete(a)
+    db.commit()
+    return {"ok": True, "id": appt_id}
+
+
+@app.get("/api/admin/users", response_model=List[UserOut])
+def admin_list_users(
+    q: Optional[str] = None,
+    limit: int = 500,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    qry = db.query(User)
+    if q:
+        like = f"%{q.lower()}%"
+        qry = qry.filter(or_(User.email.ilike(like), User.name.ilike(like), User.phone.ilike(like)))
+    return qry.order_by(User.created_at.desc()).limit(min(max(1, limit), 1000)).all()
+
+
+@app.patch("/api/admin/users/{user_id}", response_model=UserOut)
+def admin_update_user(
+    user_id: int,
+    payload: AdminUserPatch,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    u = db.get(User, user_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if payload.is_admin is not None:
+        # safety: don't allow demoting yourself
+        if u.id == admin.id and payload.is_admin is False:
+            raise HTTPException(status_code=400, detail="Нельзя снять права с себя")
+        u.is_admin = payload.is_admin
+    db.commit()
+    db.refresh(u)
+    return u
 
 
 # ─────────────────────────────────────────────────────────────────────

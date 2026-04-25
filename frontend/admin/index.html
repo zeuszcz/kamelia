@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Админ-панель — Камелия·Мед</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+<link rel="stylesheet" href="/kamelia/admin/admin.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="admin-shell">
+  <div id="admin-side"></div>
+
+  <div class="admin-content">
+    <section class="admin-greeting">
+      <div class="label label--accent">Админ-панель</div>
+      <h1>Дашборд&nbsp;<em>оператора</em></h1>
+      <p id="adminGreeting">— загрузка —</p>
+    </section>
+
+    <div class="admin-stats" id="statRow">
+      <div class="admin-stat accent">
+        <div class="stat-label">Новые заявки</div>
+        <div class="stat-num" id="stNew">—</div>
+        <div class="stat-sub">требуют звонка</div>
+      </div>
+      <div class="admin-stat brand">
+        <div class="stat-label">Подтверждённые</div>
+        <div class="stat-num" id="stConfirmed">—</div>
+        <div class="stat-sub">в работе</div>
+      </div>
+      <div class="admin-stat">
+        <div class="stat-label">Сегодня визитов</div>
+        <div class="stat-num"><span id="stToday">—</span></div>
+        <div class="stat-sub">по предпочтительной дате</div>
+      </div>
+      <div class="admin-stat">
+        <div class="stat-label">За 7 дней</div>
+        <div class="stat-num"><span id="stWeek">—</span></div>
+        <div class="stat-sub">всего поступило</div>
+      </div>
+    </div>
+
+    <div class="admin-stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 28px;">
+      <div class="admin-stat">
+        <div class="stat-label">Всего заявок</div>
+        <div class="stat-num"><span id="stTotal">—</span></div>
+        <div class="stat-sub">за всё время</div>
+      </div>
+      <div class="admin-stat">
+        <div class="stat-label">Пациентов</div>
+        <div class="stat-num"><span id="stUsers">—</span></div>
+        <div class="stat-sub">с&nbsp;кабинетом · <span id="stUsersWeek">—</span> за неделю</div>
+      </div>
+      <div class="admin-stat">
+        <div class="stat-label">Администраторов</div>
+        <div class="stat-num"><em id="stAdmins">—</em></div>
+        <div class="stat-sub">с&nbsp;доступом к&nbsp;панели</div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-head">
+        <h2>Последние&nbsp;<em>заявки</em></h2>
+        <a href="/kamelia/admin/appointments.html" class="btn btn--ghost btn--xs">
+          <span>Все заявки</span>
+          <svg class="arrow" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" style="width:11px;height:11px;"><path d="M2 7h10M8 3l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div id="latestList">— загрузка —</div>
+    </div>
+  </div>
+</div>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script src="/kamelia/admin/admin.js"></script>
+<script>
+const { api, initAdminPage, fmtDate, fmtDateTime, fmtPhoneTel, STATUS_LABEL } = window.KAMELIA_ADMIN;
+
+(async () => {
+  const user = await initAdminPage('home');
+  if (!user) return;
+
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
+  document.getElementById('adminGreeting').textContent =
+    `${greet}, ${user.name.split(' ')[0]}. Ниже — оперативная сводка по заявкам и пациентам.`;
+
+  try {
+    const [stats, latest] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/appointments?limit=8'),
+    ]);
+
+    document.getElementById('stNew').textContent = stats.appointments_new;
+    document.getElementById('stConfirmed').textContent = stats.appointments_confirmed;
+    document.getElementById('stToday').textContent = stats.appointments_today_preferred;
+    document.getElementById('stWeek').textContent = stats.appointments_last_7d;
+    document.getElementById('stTotal').textContent = stats.appointments_total;
+    document.getElementById('stUsers').textContent = stats.users_total;
+    document.getElementById('stUsersWeek').textContent = '+' + stats.users_last_7d;
+    document.getElementById('stAdmins').textContent = stats.users_admins;
+
+    const list = document.getElementById('latestList');
+    if (!latest.length) {
+      list.innerHTML = `<div class="admin-empty"><div class="marker">∅</div><h3>Заявок пока нет</h3><p>Когда пациенты начнут записываться — они появятся здесь.</p></div>`;
+    } else {
+      list.innerHTML = `
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:60px;">№</th>
+              <th>Пациент</th>
+              <th>Услуга</th>
+              <th>Филиал</th>
+              <th>Желаемое время</th>
+              <th>Поступило</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${latest.map(a => `
+              <tr>
+                <td class="num">#${String(a.id).padStart(4, '0')}</td>
+                <td>
+                  <div class="row-name">${escapeHtml(a.name)}</div>
+                  <div class="row-phone"><a href="tel:+${fmtPhoneTel(a.phone)}">${escapeHtml(a.phone)}</a></div>
+                </td>
+                <td>
+                  <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+                </td>
+                <td class="muted">${escapeHtml(a.branch)}</td>
+                <td class="muted">${a.preferred_date ? fmtDate(a.preferred_date) : '—'}<br>${a.preferred_time ? `<span style="font-size:11px;">${escapeHtml(a.preferred_time)}</span>` : ''}</td>
+                <td class="muted">${fmtDateTime(a.created_at)}</td>
+                <td><span class="st-pill st-${a.status}">${STATUS_LABEL[a.status]}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="admin-mobile-cards">
+          ${latest.map(a => `
+            <div class="admin-mobile-card">
+              <div class="top">
+                <div>
+                  <div class="row-name">${escapeHtml(a.name)}</div>
+                  <div class="row-phone"><a href="tel:+${fmtPhoneTel(a.phone)}">${escapeHtml(a.phone)}</a></div>
+                </div>
+                <span class="st-pill st-${a.status}">${STATUS_LABEL[a.status]}</span>
+              </div>
+              <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+              <div class="row-meta">
+                <span>📍 ${escapeHtml(a.branch)}</span>
+                ${a.preferred_date ? `<span>${fmtDate(a.preferred_date)} ${a.preferred_time ? '· ' + escapeHtml(a.preferred_time) : ''}</span>` : ''}
+                <span>создана ${fmtDateTime(a.created_at)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+  } catch (err) {
+    document.getElementById('latestList').innerHTML = `<div class="admin-empty"><h3>Ошибка</h3><p>${err.message}</p></div>`;
+  }
+})();
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

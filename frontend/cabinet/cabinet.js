@@ -100,14 +100,15 @@ function buildCabinetChrome(user, currentSection) {
         </ul>
       </nav>
       <div class="nav-actions">
+        ${user.is_admin ? '<a href="/kamelia/admin/" style="font-size: 13px; color: var(--accent); font-weight: 500; padding: 6px 12px; background: var(--accent-tint); border-radius: 999px;">⚙ Админка</a>' : ''}
         <a href="/kamelia/" style="font-size: 13px; color: var(--ink-3);">← На сайт</a>
         <a href="/kamelia/booking.html" class="btn btn--brand btn--sm"><span>+ Запись</span></a>
         <div class="user-chip">
           <div class="user-info">
             <div class="uname">${user.name}</div>
-            <div class="uemail">№ ${String(user.id).padStart(4, '0')}</div>
+            <div class="uemail">№ ${String(user.id).padStart(4, '0')}${user.is_admin ? ' · admin' : ''}</div>
           </div>
-          <div class="user-avatar">${initial}</div>
+          <div class="user-avatar"${user.is_admin ? ' style="background: var(--accent);"' : ''}>${initial}</div>
         </div>
         <button class="btn btn--ghost btn--sm" id="cabLogout" title="Выйти" style="padding: 8px 12px;">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;"><path d="M10 12l4-4-4-4M14 8H6M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -120,6 +121,7 @@ function buildCabinetChrome(user, currentSection) {
   <aside class="mobile-nav" id="mobileToc">
     <nav>
       ${sections.map(s => `<a href="${s.href}" class="${s.id === currentSection ? 'active' : ''}"><span>${s.label}</span><span class="muted">${s.num}</span></a>`).join('')}
+      ${user.is_admin ? '<a href="/kamelia/admin/" style="color: var(--accent);"><span>⚙ Админ-панель</span><span class="muted">A</span></a>' : ''}
       <a href="/kamelia/booking.html"><span>+ Новая запись</span></a>
       <a href="/kamelia/"><span>← На сайт</span></a>
       <a href="#" id="cabLogoutMobile" style="color: var(--accent);"><span>Выйти</span></a>

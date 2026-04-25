@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F5F0">
+<title>Пациенты — Админ-панель — Камелия·Мед</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kamelia/assets/style.css">
+<link rel="stylesheet" href="/kamelia/cabinet/cabinet.css">
+<link rel="stylesheet" href="/kamelia/admin/admin.css">
+</head>
+<body data-page="cabinet">
+
+<div id="chrome-head"></div>
+
+<div class="admin-shell">
+  <div id="admin-side"></div>
+
+  <div class="admin-content">
+    <section class="admin-greeting">
+      <div class="label label--accent">Пациенты</div>
+      <h1>Зарегистрированные&nbsp;<em>пациенты</em></h1>
+      <p>Все пользователи личного кабинета — поиск, выдача/снятие админ-прав.</p>
+    </section>
+
+    <div class="admin-card">
+      <div class="admin-filters">
+        <div class="filter-search">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6.5" cy="6.5" r="4.5"/><path d="m12.5 12.5-2.7-2.7" stroke-linecap="round"/></svg>
+          <input type="search" id="qInput" placeholder="Поиск по имени, email, телефону…" />
+        </div>
+        <div class="filter-pills" id="rolePills">
+          <button class="filter-pill active" data-role="all">Все<span class="ct" id="cAll">0</span></button>
+          <button class="filter-pill" data-role="admin">Админы<span class="ct" id="cAdmin">0</span></button>
+        </div>
+        <div class="filter-meta">Всего <strong id="totalCount">0</strong></div>
+      </div>
+
+      <div id="userList">
+        <div class="admin-empty"><div class="marker">⟳</div><p>Загрузка…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/kamelia/cabinet/cabinet.js"></script>
+<script src="/kamelia/admin/admin.js"></script>
+<script>
+const { api, initAdminPage, fmtDate, fmtDateTime, fmtPhoneTel } = window.KAMELIA_ADMIN;
+
+let allUsers = [];
+let activeRole = 'all';
+let activeQuery = '';
+let currentMe = null;
+
+const escapeHtml = s => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadUsers() {
+  try {
+    allUsers = await api('/api/admin/users?limit=500');
+    updateCounts();
+    render();
+  } catch (err) {
+    document.getElementById('userList').innerHTML = `<div class="admin-empty"><h3>Ошибка</h3><p>${err.message}</p></div>`;
+  }
+}
+
+function updateCounts() {
+  document.getElementById('cAll').textContent = allUsers.length;
+  document.getElementById('cAdmin').textContent = allUsers.filter(u => u.is_admin).length;
+  document.getElementById('totalCount').textContent = allUsers.length;
+}
+
+function filtered() {
+  let list = allUsers;
+  if (activeRole === 'admin') list = list.filter(u => u.is_admin);
+  if (activeQuery) {
+    const q = activeQuery.toLowerCase();
+    list = list.filter(u =>
+      (u.name || '').toLowerCase().includes(q)
+      || (u.email || '').toLowerCase().includes(q)
+      || (u.phone || '').toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+function render() {
+  const list = filtered();
+  const mount = document.getElementById('userList');
+  if (!list.length) {
+    mount.innerHTML = `<div class="admin-empty"><div class="marker">∅</div><h3>Ничего не найдено</h3></div>`;
+    return;
+  }
+
+  mount.innerHTML = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width:60px;">№</th>
+          <th>Пациент</th>
+          <th>Email</th>
+          <th>Телефон</th>
+          <th>Дата рожд.</th>
+          <th>Регистрация</th>
+          <th>Роль</th>
+          <th class="action">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(u => {
+          const initial = (u.name || u.email)[0].toUpperCase();
+          const isMe = currentMe && u.id === currentMe.id;
+          return `
+            <tr data-id="${u.id}">
+              <td class="num">КМ-${String(u.id).padStart(4, '0')}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:${u.is_admin ? 'var(--accent)' : 'var(--brand-50)'};color:${u.is_admin ? '#FFF' : 'var(--brand)'};display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0;">${initial}</div>
+                  <div>
+                    <div class="row-name">${escapeHtml(u.name)}${isMe ? ' <span style="font-size:10px;color:var(--ink-3);">· это вы</span>' : ''}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted"><a href="mailto:${escapeHtml(u.email)}" style="color:var(--ink-3);">${escapeHtml(u.email)}</a></td>
+              <td class="muted">${u.phone ? `<a href="tel:+${fmtPhoneTel(u.phone)}" style="color:var(--ink-3);">${escapeHtml(u.phone)}</a>` : '—'}</td>
+              <td class="muted">${u.birth_date ? fmtDate(u.birth_date) : '—'}</td>
+              <td class="muted">${fmtDateTime(u.created_at)}</td>
+              <td>${u.is_admin ? '<span class="st-pill st-new">админ</span>' : '<span class="st-pill st-done">пациент</span>'}</td>
+              <td class="action">
+                <div class="row-action">
+                  ${u.is_admin
+                    ? (isMe ? '<button disabled title="Нельзя снять права с себя">снять</button>' : `<button data-act="role" data-id="${u.id}" data-value="false">Снять админа</button>`)
+                    : `<button class="brand" data-act="role" data-id="${u.id}" data-value="true">Сделать админом</button>`}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+
+    <div class="admin-mobile-cards">
+      ${list.map(u => {
+        const initial = (u.name || u.email)[0].toUpperCase();
+        const isMe = currentMe && u.id === currentMe.id;
+        return `
+          <div class="admin-mobile-card">
+            <div class="top">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:${u.is_admin ? 'var(--accent)' : 'var(--brand-50)'};color:${u.is_admin ? '#FFF' : 'var(--brand)'};display:flex;align-items:center;justify-content:center;font-weight:500;">${initial}</div>
+                <div>
+                  <div class="row-name">${escapeHtml(u.name)}${isMe ? ' <span style="font-size:10px;color:var(--ink-3);">· вы</span>' : ''}</div>
+                  <div class="row-phone">${escapeHtml(u.email)}</div>
+                </div>
+              </div>
+              ${u.is_admin ? '<span class="st-pill st-new">админ</span>' : '<span class="st-pill st-done">пациент</span>'}
+            </div>
+            <div class="row-meta">
+              ${u.phone ? `<span><a href="tel:+${fmtPhoneTel(u.phone)}" style="color:var(--brand);">${escapeHtml(u.phone)}</a></span>` : ''}
+              <span style="opacity:.7;">КМ-${String(u.id).padStart(4, '0')}</span>
+              <span style="opacity:.7;">регистрация ${fmtDateTime(u.created_at)}</span>
+            </div>
+            <div class="row-action" style="margin-top: 10px;">
+              ${u.is_admin
+                ? (isMe ? '<button disabled>нельзя снять с себя</button>' : `<button data-act="role" data-id="${u.id}" data-value="false">Снять админа</button>`)
+                : `<button class="brand" data-act="role" data-id="${u.id}" data-value="true">Сделать админом</button>`}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  mount.querySelectorAll('button[data-act="role"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = +btn.dataset.id;
+      const isAdmin = btn.dataset.value === 'true';
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+      const action = isAdmin ? 'выдать' : 'снять';
+      if (!confirm(`${isAdmin ? 'Выдать' : 'Снять'} права администратора пользователю «${u.name}»?`)) return;
+      btn.disabled = true;
+      try {
+        const updated = await api(`/api/admin/users/${id}`, {
+          method: 'PATCH',
+          body: { is_admin: isAdmin },
+        });
+        Object.assign(u, updated);
+        updateCounts();
+        render();
+      } catch (err) {
+        alert('Ошибка: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+(async () => {
+  currentMe = await initAdminPage('users');
+  if (!currentMe) return;
+
+  document.querySelectorAll('#rolePills .filter-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#rolePills .filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeRole = btn.dataset.role;
+      render();
+    });
+  });
+
+  let t;
+  document.getElementById('qInput').addEventListener('input', e => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      activeQuery = e.target.value.trim();
+      render();
+    }, 150);
+  });
+
+  loadUsers();
+})();
+</script>
+</body>
+</html>
