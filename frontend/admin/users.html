@@ -193,6 +193,7 @@ function render() {
         Object.assign(u, updated);
         updateCounts();
         render();
+        if (window.toast) toast.success(isAdmin ? 'Выданы админ-права' : 'Сняты админ-права', u.name);
       } catch (err) {
         alert('Ошибка: ' + err.message);
         btn.disabled = false;

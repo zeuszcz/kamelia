@@ -9,6 +9,27 @@
 (function () {
 
 /* ─────────────────────────────────
+   AUTO-LOAD ENHANCE LAYER
+   (idempotent — safe to call from multiple scripts)
+   ───────────────────────────────── */
+(function loadEnhance() {
+  if (!document.querySelector('link[data-enhance-css]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/kamelia/assets/enhance.css';
+    link.dataset.enhanceCss = '1';
+    document.head.appendChild(link);
+  }
+  if (!document.querySelector('script[data-enhance-js]')) {
+    const script = document.createElement('script');
+    script.src = '/kamelia/assets/enhance.js';
+    script.defer = true;
+    script.dataset.enhanceJs = '1';
+    document.head.appendChild(script);
+  }
+})();
+
+/* ─────────────────────────────────
    DATA: services + price catalog
    ───────────────────────────────── */
 const ROOT = '/kamelia';

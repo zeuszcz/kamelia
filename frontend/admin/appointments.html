@@ -195,6 +195,7 @@ function render() {
         Object.assign(a, updated);
         updateCounts();
         render();
+        if (window.toast) toast.success(`Статус: ${({new:'Новая', confirmed:'Подтверждена', done:'Выполнена', cancelled:'Отменена'})[newStatus]}`, `Заявка №${String(id).padStart(4,'0')}`);
       } catch (err) {
         alert('Ошибка обновления статуса: ' + err.message);
         btn.disabled = false;
@@ -212,6 +213,7 @@ function render() {
         allAppts = allAppts.filter(a => a.id !== id);
         updateCounts();
         render();
+        if (window.toast) toast.success('Заявка удалена', `№${String(id).padStart(4,'0')}`);
       } catch (err) {
         alert('Ошибка удаления: ' + err.message);
       }
