@@ -140,17 +140,31 @@
                   <div class="kselect" data-placeholder="— выберите услугу —">
                     <select id="fService">
                       <option value="" disabled selected hidden>— выберите услугу —</option>
-                      <option value="Первичная консультация" data-meta="от 1 000 ₽">Первичная консультация</option>
-                      <option value="Профессиональная гигиена" data-meta="от 1 200 ₽">Профессиональная гигиена</option>
-                      <option value="Лечение кариеса" data-meta="от 4 900 ₽">Лечение кариеса</option>
-                      <option value="Брекеты или элайнеры" data-meta="ортодонтия">Брекеты или элайнеры</option>
-                      <option value="Имплантация" data-meta="от 26 000 ₽">Имплантация</option>
-                      <option value="Отбеливание" data-meta="от 9 900 ₽">Отбеливание</option>
-                      <option value="Детский приём" data-meta="от 700 ₽">Детский приём</option>
-                      <option value="Не уверен — посоветуйте" data-meta="консультация">Не уверен — посоветуйте</option>
+                      <option value="Первичная консультация" data-meta="от 1 000 ₽" data-slug="consult">Первичная консультация</option>
+                      <option value="Профессиональная гигиена" data-meta="от 1 200 ₽" data-slug="hygiene">Профессиональная гигиена</option>
+                      <option value="Лечение кариеса" data-meta="от 4 900 ₽" data-slug="therapy">Лечение кариеса</option>
+                      <option value="Брекеты или элайнеры" data-meta="ортодонтия" data-slug="orthodontics">Брекеты или элайнеры</option>
+                      <option value="Имплантация" data-meta="от 26 000 ₽" data-slug="surgery">Имплантация</option>
+                      <option value="Отбеливание" data-meta="от 9 900 ₽" data-slug="aesthetics">Отбеливание</option>
+                      <option value="Детский приём" data-meta="от 700 ₽" data-slug="kids">Детский приём</option>
+                      <option value="Не уверен — посоветуйте" data-meta="консультация" data-slug="*">Не уверен — посоветуйте</option>
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div class="field" id="doctorField">
+                <label>Врач</label>
+                <div class="kselect" data-placeholder="— любой свободный специалист —">
+                  <select id="fDoctor">
+                    <option value="" selected>— любой свободный специалист —</option>
+                  </select>
+                </div>
+                <div class="doctor-hint" id="doctorHint">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.01"/></svg>
+                  <span>Сначала выберите услугу — покажем подходящих специалистов</span>
+                </div>
+                <div class="doctor-pick" id="doctorPick" style="display: none;"></div>
               </div>
 
               <div class="form-row">
@@ -252,6 +266,102 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ─── DOCTOR SELECTOR (filtered by service) ───
+  const fService = document.getElementById('fService');
+  const fDoctor = document.getElementById('fDoctor');
+  const doctorHint = document.getElementById('doctorHint');
+  const doctorPick = document.getElementById('doctorPick');
+  let allDoctors = [];
+
+  function getInitials(name) {
+    return (name || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  const ICON_INFO = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.01"/></svg>';
+  const ICON_CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3 3 7-7"/></svg>';
+
+  function rebuildDoctorOptions() {
+    const opt = fService.selectedOptions[0];
+    const slug = opt?.dataset?.slug;
+
+    if (!slug) {
+      fDoctor.innerHTML = '<option value="" selected>— сначала выберите услугу —</option>';
+      fDoctor.disabled = true;
+      doctorHint.innerHTML = `${ICON_INFO}<span>Сначала выберите услугу — покажем подходящих специалистов</span>`;
+      fDoctor.dispatchEvent(new Event('change', { bubbles: true }));
+      updateDoctorPick();
+      return;
+    }
+
+    fDoctor.disabled = false;
+    const pool = (slug === '*') ? allDoctors : allDoctors.filter(d => (d.services || []).includes(slug));
+    const previousValue = fDoctor.value;
+
+    const placeholder = pool.length
+      ? `— любой из ${pool.length} свободн${pool.length === 1 ? 'ого' : 'ых'} —`
+      : '— нет подходящих специалистов —';
+
+    let optsHtml = `<option value="" selected hidden>${placeholder}</option>`;
+    if (pool.length) {
+      optsHtml += `<option value="any" data-meta="клиника подберёт оптимального">— Любой свободный —</option>`;
+      optsHtml += pool.map(d => `<option value="${d.id}" data-meta="${d.spec} · стаж ${d.stat}">${d.name}</option>`).join('');
+    }
+    fDoctor.innerHTML = optsHtml;
+
+    // restore previous selection if still in pool
+    if (previousValue === 'any' || (previousValue && pool.some(d => d.id === previousValue))) {
+      fDoctor.value = previousValue;
+    } else {
+      fDoctor.value = '';
+    }
+
+    // update hint
+    if (slug === '*') {
+      doctorHint.innerHTML = `${ICON_CHECK}<span>Покажем всю команду — <strong>${pool.length}</strong> специалистов разного профиля. Клиника может сама подобрать.</span>`;
+    } else if (pool.length === 0) {
+      doctorHint.innerHTML = `${ICON_INFO}<span>По этой услуге специалистов нет в открытом списке. Запишитесь — администратор подберёт.</span>`;
+    } else {
+      const word = pool.length === 1 ? 'специалист' : pool.length < 5 ? 'специалиста' : 'специалистов';
+      doctorHint.innerHTML = `${ICON_CHECK}<span>Найдено <strong>${pool.length}</strong> ${word}. Можно выбрать конкретного или оставить «любой».</span>`;
+    }
+
+    fDoctor.dispatchEvent(new Event('change', { bubbles: true }));
+    updateDoctorPick();
+  }
+
+  function updateDoctorPick() {
+    const id = fDoctor.value;
+    if (!id) {
+      doctorPick.style.display = 'none';
+      return;
+    }
+    const d = allDoctors.find(x => x.id === id);
+    if (!d) { doctorPick.style.display = 'none'; return; }
+    doctorPick.style.display = 'flex';
+    doctorPick.classList.remove('empty');
+    doctorPick.innerHTML = `
+      <div class="dp-avatar">${getInitials(d.name)}</div>
+      <div class="dp-info">
+        <div class="dp-name">${d.name} <span class="dp-meta-pill">${d.id.toUpperCase()}</span></div>
+        <div class="dp-spec">${d.spec} · стаж ${d.stat}</div>
+      </div>
+      <a href="/kamelia/doctors.html" class="dp-link" target="_blank" rel="noopener">Анкета →</a>
+    `;
+    // re-trigger anim
+    doctorPick.style.animation = 'none';
+    void doctorPick.offsetWidth;
+    doctorPick.style.animation = '';
+  }
+
+  // load doctors and bind
+  fetch('/api/doctors').then(r => r.json()).then(d => {
+    allDoctors = d.doctors || [];
+    rebuildDoctorOptions();
+  }).catch(() => {});
+
+  fService.addEventListener('change', rebuildDoctorOptions);
+  fDoctor.addEventListener('change', updateDoctorPick);
+
   fetch('/api/auth/me', { credentials: 'include' })
     .then(r => r.ok ? r.json() : null)
     .then(user => {
@@ -337,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
       phone: fPhone.value.trim(),
       branch: branchSel.value,
       service: document.getElementById('fService').value || null,
+      doctor_id: (() => { const v = document.getElementById('fDoctor').value; return v && v !== 'any' ? v : null; })(),
       preferred_date: document.getElementById('fDate').value || null,
       preferred_time: document.getElementById('fTime').value || null,
       note: document.getElementById('fNote').value.trim() || null,

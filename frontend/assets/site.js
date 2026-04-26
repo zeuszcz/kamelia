@@ -664,11 +664,21 @@ function initKSelect(wrap) {
 
   const updateTrigger = () => {
     const opt = sel.value ? Array.from(sel.options).find(o => o.value === sel.value && !o.hidden) : null;
-    const text = opt ? opt.textContent.trim() : placeholder;
+    let text;
+    if (opt) {
+      text = opt.textContent.trim();
+    } else {
+      // re-read current placeholder option (may change if options are rebuilt dynamically)
+      const ph = sel.querySelector('option[hidden]') || sel.querySelector('option[value=""]');
+      text = ph ? ph.textContent.trim() : placeholder;
+    }
     trigger.innerHTML = `
       <span class="kselect-value ${opt ? '' : 'placeholder'}">${text}</span>
       ${CHEVRON_ICON}
     `;
+    // reflect disabled state
+    trigger.disabled = sel.disabled;
+    wrap.classList.toggle('disabled', sel.disabled);
   };
 
   const renderPanel = () => {
@@ -709,6 +719,7 @@ function initKSelect(wrap) {
 
   trigger.addEventListener('click', e => {
     e.stopPropagation();
+    if (sel.disabled) return;
     if (wrap.classList.contains('open')) close();
     else open();
   });
@@ -725,6 +736,9 @@ function initKSelect(wrap) {
     close();
     trigger.focus();
   });
+
+  // observe disabled state changes
+  new MutationObserver(updateTrigger).observe(sel, { attributes: true, attributeFilter: ['disabled'] });
 
   // close on outside click
   document.addEventListener('click', e => {

@@ -90,6 +90,7 @@ class Appointment(Base):
     phone = Column(String(40), nullable=False)
     branch = Column(String(120), nullable=False)
     service = Column(String(120), nullable=True)
+    doctor_id = Column(String(40), nullable=True)  # km-XX or null = "any"
     preferred_date = Column(String(10), nullable=True)
     preferred_time = Column(String(40), nullable=True)
     note = Column(Text, nullable=True)
@@ -108,6 +109,9 @@ def _migrate_db():
         cols = [r[1] for r in conn.execute(sql_text("PRAGMA table_info(users)")).fetchall()]
         if "is_admin" not in cols:
             conn.execute(sql_text("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"))
+        appt_cols = [r[1] for r in conn.execute(sql_text("PRAGMA table_info(appointments)")).fetchall()]
+        if "doctor_id" not in appt_cols:
+            conn.execute(sql_text("ALTER TABLE appointments ADD COLUMN doctor_id VARCHAR(40)"))
 
 
 _migrate_db()
@@ -275,6 +279,7 @@ class AppointmentIn(BaseModel):
     phone: str = Field(min_length=10, max_length=40)
     branch: str = Field(min_length=1, max_length=120)
     service: Optional[str] = None
+    doctor_id: Optional[str] = None
     preferred_date: Optional[str] = None
     preferred_time: Optional[str] = None
     note: Optional[str] = None
@@ -287,6 +292,7 @@ class AppointmentOut(BaseModel):
     phone: str
     branch: str
     service: Optional[str] = None
+    doctor_id: Optional[str] = None
     preferred_date: Optional[str] = None
     preferred_time: Optional[str] = None
     note: Optional[str] = None
@@ -326,18 +332,18 @@ BRANCHES = [
 ]
 
 DOCTORS = [
-    {"id": "km-01", "name": "Регина Хабибуллина",  "spec": "Стоматолог-ортопед, главврач", "since": 2010, "stat": "22 года"},
-    {"id": "km-08", "name": "Айдар Гайнуллин",     "spec": "Хирург-имплантолог",            "since": 2012, "stat": "18 лет"},
-    {"id": "km-12", "name": "Эльмира Сафина",      "spec": "Детский стоматолог",            "since": 2014, "stat": "14 лет"},
-    {"id": "km-19", "name": "Алина Залялова",      "spec": "Ортодонт · элайнеры",           "since": 2017, "stat": "11 лет"},
-    {"id": "km-04", "name": "Ленар Аглиуллин",     "spec": "Челюстно-лицевой хирург",       "since": 2011, "stat": "20 лет"},
-    {"id": "km-15", "name": "Гузель Минниханова",  "spec": "Терапевт · эндодонтист",        "since": 2015, "stat": "13 лет"},
-    {"id": "km-23", "name": "Ильдар Шакиров",      "spec": "Хирург · удаление",             "since": 2018, "stat": "9 лет"},
-    {"id": "km-31", "name": "Лилия Валеева",       "spec": "Терапевт · реставрация",        "since": 2020, "stat": "7 лет"},
-    {"id": "km-09", "name": "Артур Газизов",       "spec": "Ортопед · виниры",              "since": 2013, "stat": "16 лет"},
-    {"id": "km-22", "name": "Динара Каримова",     "spec": "Пародонтолог · Vector",         "since": 2017, "stat": "10 лет"},
-    {"id": "km-28", "name": "Камиля Юсупова",      "spec": "Гигиенист · Air Flow",          "since": 2019, "stat": "8 лет"},
-    {"id": "km-35", "name": "Тимур Нуриев",        "spec": "Имплантолог · Neodent",         "since": 2022, "stat": "6 лет"},
+    {"id": "km-01", "name": "Регина Хабибуллина",  "spec": "Стоматолог-ортопед, главврач", "since": 2010, "stat": "22 года", "services": ["consult", "prosthetics"]},
+    {"id": "km-08", "name": "Айдар Гайнуллин",     "spec": "Хирург-имплантолог",            "since": 2012, "stat": "18 лет",  "services": ["consult", "surgery"]},
+    {"id": "km-12", "name": "Эльмира Сафина",      "spec": "Детский стоматолог",            "since": 2014, "stat": "14 лет",  "services": ["kids", "consult"]},
+    {"id": "km-19", "name": "Алина Залялова",      "spec": "Ортодонт · элайнеры",           "since": 2017, "stat": "11 лет",  "services": ["consult", "orthodontics"]},
+    {"id": "km-04", "name": "Ленар Аглиуллин",     "spec": "Челюстно-лицевой хирург",       "since": 2011, "stat": "20 лет",  "services": ["consult", "surgery"]},
+    {"id": "km-15", "name": "Гузель Минниханова",  "spec": "Терапевт · эндодонтист",        "since": 2015, "stat": "13 лет",  "services": ["consult", "therapy"]},
+    {"id": "km-23", "name": "Ильдар Шакиров",      "spec": "Хирург · удаление",             "since": 2018, "stat": "9 лет",   "services": ["consult", "surgery"]},
+    {"id": "km-31", "name": "Лилия Валеева",       "spec": "Терапевт · реставрация",        "since": 2020, "stat": "7 лет",   "services": ["consult", "therapy", "aesthetics"]},
+    {"id": "km-09", "name": "Артур Газизов",       "spec": "Ортопед · виниры",              "since": 2013, "stat": "16 лет",  "services": ["consult", "prosthetics", "aesthetics"]},
+    {"id": "km-22", "name": "Динара Каримова",     "spec": "Пародонтолог · Vector",         "since": 2017, "stat": "10 лет",  "services": ["hygiene"]},
+    {"id": "km-28", "name": "Камиля Юсупова",      "spec": "Гигиенист · Air Flow",          "since": 2019, "stat": "8 лет",   "services": ["hygiene"]},
+    {"id": "km-35", "name": "Тимур Нуриев",        "spec": "Имплантолог · Neodent",         "since": 2022, "stat": "6 лет",   "services": ["consult", "surgery"]},
 ]
 
 
@@ -464,6 +470,7 @@ def create_appointment(
         phone=payload.phone.strip(),
         branch=payload.branch,
         service=payload.service,
+        doctor_id=payload.doctor_id,
         preferred_date=payload.preferred_date,
         preferred_time=payload.preferred_time,
         note=payload.note,

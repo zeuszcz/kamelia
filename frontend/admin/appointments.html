@@ -58,12 +58,30 @@ const { api, initAdminPage, fmtDate, fmtDateTime, fmtPhoneTel, STATUS_LABEL, STA
 let allAppts = [];
 let activeStatus = 'all';
 let activeQuery = '';
+let doctorMap = {};
 
 const escapeHtml = s => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+function doctorChip(id) {
+  if (!id) return '';
+  const d = doctorMap[id];
+  if (!d) return `<span style="display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--ink-3);margin-top:6px;"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--brand-50);color:var(--brand);font-size:9px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">?</span>врач ${escapeHtml(id)}</span>`;
+  const initials = d.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  return `<div style="display:inline-flex;gap:6px;align-items:center;font-size:11px;color:var(--ink-2);margin-top:6px;background:var(--brand-50);padding:3px 8px 3px 4px;border-radius:99px;">
+    <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--brand);color:var(--bg);font-size:9px;font-weight:500;">${initials}</span>
+    <span><strong style="color:var(--brand-2);font-weight:500;">${escapeHtml(d.name)}</strong> · ${escapeHtml(d.spec)}</span>
+  </div>`;
+}
+
 async function loadAppts() {
   try {
-    allAppts = await api('/api/admin/appointments?limit=500');
+    const [appts, docs] = await Promise.all([
+      api('/api/admin/appointments?limit=500'),
+      fetch('/api/doctors').then(r => r.json()).catch(() => ({ doctors: [] })),
+    ]);
+    allAppts = appts;
+    doctorMap = {};
+    (docs.doctors || []).forEach(d => { doctorMap[d.id] = d; });
     updateCounts();
     render();
   } catch (err) {
@@ -131,6 +149,7 @@ function render() {
             </td>
             <td>
               <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+              ${doctorChip(a.doctor_id)}
             </td>
             <td class="muted">${escapeHtml(a.branch)}</td>
             <td class="muted">${a.preferred_date ? fmtDate(a.preferred_date) : '—'}${a.preferred_time ? `<br><span style="font-size:11px;">${escapeHtml(a.preferred_time)}</span>` : ''}</td>
@@ -162,6 +181,7 @@ function render() {
             <span class="st-pill st-${a.status}">${STATUS_LABEL[a.status]}</span>
           </div>
           <div class="row-service">${escapeHtml(a.service || '— уточнить')}</div>
+          ${doctorChip(a.doctor_id)}
           <div class="row-meta">
             <span>📍 ${escapeHtml(a.branch)}</span>
             ${a.preferred_date ? `<span>${fmtDate(a.preferred_date)} ${a.preferred_time ? '· ' + escapeHtml(a.preferred_time) : ''}</span>` : ''}
